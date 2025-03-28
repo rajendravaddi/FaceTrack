@@ -3,12 +3,20 @@ import { AppBar, Toolbar, Typography, Button, Container, Grid, Paper, Drawer, Li
 import { Link, useNavigate } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 
-const UserCameraDetails = () => {
+const AddAuthorizedMember = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [image, setImage] = useState(null);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
+  };
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setImage(URL.createObjectURL(file));
+    }
   };
 
   return (
@@ -45,9 +53,9 @@ const UserCameraDetails = () => {
             <ListItem button component={Link} to="/live-monitor">
               <ListItemText primary="Live Camera Monitor" />
             </ListItem>
-            <ListItem button onClick={() => navigate("/")}> 
-              <ListItemText primary="Logout" />
-            </ListItem>
+            <ListItem button component={Link} to="/login">
+                          <ListItemText primary="Logout" />
+                        </ListItem>
           </List>
         </Box>
       </Drawer>
@@ -61,39 +69,39 @@ const UserCameraDetails = () => {
               <MenuIcon />
             </IconButton>
             <Typography variant="h4" sx={{ flexGrow: 1, fontFamily: "monospace", fontWeight: "bold", letterSpacing: 2 }}>
-              User & Camera Details
+              FaceTrack
             </Typography>
           </Toolbar>
         </AppBar>
 
-        {/* Form Section */}
+        {/* Add Authorized Member Form */}
         <Container sx={{ mt: 4 }}>
-          <Paper sx={{ padding: 3 }}>
-            <Typography variant="h5" gutterBottom>
-              Add User & Camera Details
-            </Typography>
-            <Grid container spacing={3}>
-              {/* User Details */}
-              <Grid item xs={12} md={6}>
-                <TextField fullWidth label="User Name" variant="outlined" margin="normal" />
-                <TextField fullWidth label="Email" variant="outlined" margin="normal" />
-                <TextField fullWidth label="Contact Number" variant="outlined" margin="normal" />
-              </Grid>
-              {/* Camera Details */}
-              <Grid item xs={12} md={6}>
-                <TextField fullWidth label="Camera ID" variant="outlined" margin="normal" />
-                <TextField fullWidth label="IP Address" variant="outlined" margin="normal" />
-                <TextField fullWidth label="Location" variant="outlined" margin="normal" />
-              </Grid>
+          <Typography variant="h5" gutterBottom>
+            Add Authorized Member
+          </Typography>
+          <Grid container spacing={3}>
+            {/* Person Details */}
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ padding: 2 }}>
+                <TextField fullWidth label="Person Name" margin="normal" required />
+                <TextField fullWidth label="Position (Optional)" margin="normal" />
+                {/* Image Upload */}
+                <Typography variant="h6" sx={{ mt: 2 }}>Upload Face Image</Typography>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  style={{ display: "block", margin: "10px auto" }}
+                />
+                {image && <img src={image} alt="Uploaded" style={{ width: "100px", height: "100px", marginTop: "10px" }} />}
+              </Paper>
             </Grid>
-            <Button variant="contained" color="primary" sx={{ mt: 2 }}>
-              Submit
-            </Button>
-          </Paper>
+          </Grid>
+          <Button variant="contained" color="primary" sx={{ mt: 3 }}>Submit</Button>
         </Container>
       </Box>
     </div>
   );
 };
 
-export default UserCameraDetails;
+export default AddAuthorizedMember;

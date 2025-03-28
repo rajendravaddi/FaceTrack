@@ -45,7 +45,7 @@ const UserCameraDetails = () => {
             <ListItem button component={Link} to="/live-monitor">
               <ListItemText primary="Live Camera Monitor" />
             </ListItem>
-            <ListItem button onClick={() => navigate("/")}> 
+            <ListItem button component={Link} to="/login">
               <ListItemText primary="Logout" />
             </ListItem>
           </List>
@@ -61,35 +61,38 @@ const UserCameraDetails = () => {
               <MenuIcon />
             </IconButton>
             <Typography variant="h4" sx={{ flexGrow: 1, fontFamily: "monospace", fontWeight: "bold", letterSpacing: 2 }}>
-              User & Camera Details
+              FaceTrack
             </Typography>
           </Toolbar>
         </AppBar>
 
-        {/* Form Section */}
+        {/* User & Camera Details Form */}
         <Container sx={{ mt: 4 }}>
-          <Paper sx={{ padding: 3 }}>
-            <Typography variant="h5" gutterBottom>
-              Add User & Camera Details
-            </Typography>
-            <Grid container spacing={3}>
-              {/* User Details */}
-              <Grid item xs={12} md={6}>
-                <TextField fullWidth label="User Name" variant="outlined" margin="normal" />
-                <TextField fullWidth label="Email" variant="outlined" margin="normal" />
-                <TextField fullWidth label="Contact Number" variant="outlined" margin="normal" />
-              </Grid>
-              {/* Camera Details */}
-              <Grid item xs={12} md={6}>
-                <TextField fullWidth label="Camera ID" variant="outlined" margin="normal" />
-                <TextField fullWidth label="IP Address" variant="outlined" margin="normal" />
-                <TextField fullWidth label="Location" variant="outlined" margin="normal" />
-              </Grid>
+          <Typography variant="h5" gutterBottom>
+            Add User & Camera Details
+          </Typography>
+          <Grid container spacing={3}>
+            {/* User Details */}
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ padding: 2 }}>
+                <Typography variant="h6">User Details</Typography>
+                <TextField fullWidth label="Full Name" margin="normal" required />
+                <TextField fullWidth label="Email" margin="normal" required type="email" />
+                <TextField fullWidth label="Phone Number (Optional)" margin="normal" type="tel" />
+                <TextField fullWidth label="Address (Optional)" margin="normal" />
+              </Paper>
             </Grid>
-            <Button variant="contained" color="primary" sx={{ mt: 2 }}>
-              Submit
-            </Button>
-          </Paper>
+            {/* Camera Details */}
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ padding: 2 }}>
+                <Typography variant="h6">Camera Details</Typography>
+                <TextField fullWidth label="Camera Name" margin="normal" required />
+                <TextField fullWidth label="IP Address" margin="normal" required />
+                <TextField fullWidth label="Location (Optional)" margin="normal" />
+              </Paper>
+            </Grid>
+          </Grid>
+          <Button variant="contained" color="primary" sx={{ mt: 3 }}>Submit</Button>
         </Container>
       </Box>
     </div>
