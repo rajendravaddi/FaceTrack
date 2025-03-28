@@ -3,7 +3,7 @@ import { AppBar, Toolbar, Typography, Button, Container, Grid, Paper, Drawer, Li
 import { Link, useNavigate } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 
-const UserCameraDetails = () => {
+const AddCameras = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -24,8 +24,8 @@ const UserCameraDetails = () => {
             <ListItem button component={Link} to="/dashboard">
               <ListItemText primary="Dashboard Overview" />
             </ListItem>
-            <ListItem button component={Link} to="/user-details">
-              <ListItemText primary="Add User & Camera Details" />
+            <ListItem button component={Link} to="/add-cameras">
+              <ListItemText primary="Add Cameras" />
             </ListItem>
             <ListItem button component={Link} to="/view-details">
               <ListItemText primary="View Stored Details" />
@@ -66,22 +66,12 @@ const UserCameraDetails = () => {
           </Toolbar>
         </AppBar>
 
-        {/* User & Camera Details Form */}
+        {/* Camera Details Form */}
         <Container sx={{ mt: 4 }}>
           <Typography variant="h5" gutterBottom>
-            Add User & Camera Details
+            Add Cameras
           </Typography>
           <Grid container spacing={3}>
-            {/* User Details */}
-            <Grid item xs={12} md={6}>
-              <Paper sx={{ padding: 2 }}>
-                <Typography variant="h6">User Details</Typography>
-                <TextField fullWidth label="Full Name" margin="normal" required />
-                <TextField fullWidth label="Email" margin="normal" required type="email" />
-                <TextField fullWidth label="Phone Number (Optional)" margin="normal" type="tel" />
-                <TextField fullWidth label="Address (Optional)" margin="normal" />
-              </Paper>
-            </Grid>
             {/* Camera Details */}
             <Grid item xs={12} md={6}>
               <Paper sx={{ padding: 2 }}>
@@ -99,4 +89,4 @@ const UserCameraDetails = () => {
   );
 };
 
-export default UserCameraDetails;
+export default AddCameras;

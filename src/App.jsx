@@ -4,7 +4,7 @@ import Login from "./auth/Login";
 import Signup from "./auth/Signup";
 import ForgotPassword from "./auth/ForgotPassword";
 import Dashboard from "./components/Dashboard"; // Updated import path
-import UserDetailsForm from "./components/UserDetailsForm"; // Updated import path
+import AddCameras from "./components/AddCameras"; // Updated import path
 import AddAuthMembers from "./components/AddAuthMembers"; // Updated import path
 
 const App = () => {
@@ -15,7 +15,7 @@ const App = () => {
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/user-details" element={<UserDetailsForm />} />
+        <Route path="/add-cameras" element={<AddCameras />} />
         <Route path="/add-authorized" element={<AddAuthMembers />} />
         
       </Routes>

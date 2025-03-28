@@ -1,31 +1,53 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AppBar, Toolbar, Typography, Button, Container, Grid, Paper, Drawer, List, ListItem, ListItemText, Box, IconButton } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [username, setUsername] = useState("");
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUsername(user.displayName || "User");
+      } else {
+        setUsername("");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    const auth = getAuth();
+    await signOut(auth);
+    navigate("/login");
   };
 
   return (
     <div style={{ display: "flex" }}>
       {/* Sidebar Navigation */}
-      <Drawer open={sidebarOpen} onClose={toggleSidebar} sx={{ width: 240, flexShrink: 0 }}>
+      <Drawer open={sidebarOpen} onClose={() => setSidebarOpen(false)} sx={{ width: 240, flexShrink: 0 }}>
         <Toolbar />
         <Box sx={{ textAlign: "center", p: 2, fontFamily: "monospace", fontWeight: "bold", fontSize: "1.5rem" }}>
           FaceTrack
         </Box>
+        {username && (
+          <Typography variant="subtitle1" sx={{ textAlign: "center", p: 1 }}>
+            Hello, {username}!
+          </Typography>
+        )}
         <Box sx={{ overflow: "auto" }}>
           <List>
             <ListItem button component={Link} to="/dashboard">
               <ListItemText primary="Dashboard Overview" />
             </ListItem>
-            <ListItem button component={Link} to="/user-details">
-              <ListItemText primary="Add User & Camera Details" />
+            <ListItem button component={Link} to="/add-cameras">
+              <ListItemText primary="Add Cameras" />
             </ListItem>
             <ListItem button component={Link} to="/view-details">
               <ListItemText primary="View Stored Details" />
@@ -45,24 +67,30 @@ const Dashboard = () => {
             <ListItem button component={Link} to="/live-monitor">
               <ListItemText primary="Live Camera Monitor" />
             </ListItem>
-            <ListItem button component={Link} to="/login">
-                          <ListItemText primary="Logout" />
-                        </ListItem>
+            <ListItem button onClick={handleLogout}>
+              <ListItemText primary="Logout" />
+            </ListItem>
           </List>
         </Box>
       </Drawer>
-      
+
       {/* Main Content Area */}
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         {/* Navbar */}
         <AppBar position="static">
           <Toolbar>
-            <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }} onClick={toggleSidebar}>
+            <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }} onClick={() => setSidebarOpen(true)}>
               <MenuIcon />
             </IconButton>
             <Typography variant="h4" sx={{ flexGrow: 1, fontFamily: "monospace", fontWeight: "bold", letterSpacing: 2 }}>
               FaceTrack
             </Typography>
+            {username && (
+              <Typography variant="h6" sx={{ mr: 3 }}>
+                {username}
+              </Typography>
+            )}
+            <Button color="inherit" onClick={handleLogout}>Logout</Button>
           </Toolbar>
         </AppBar>
 

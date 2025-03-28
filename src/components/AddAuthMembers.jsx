@@ -32,7 +32,7 @@ const AddAuthorizedMember = () => {
             <ListItem button component={Link} to="/dashboard">
               <ListItemText primary="Dashboard Overview" />
             </ListItem>
-            <ListItem button component={Link} to="/user-details">
+            <ListItem button component={Link} to="/add-cameras">
               <ListItemText primary="Add User & Camera Details" />
             </ListItem>
             <ListItem button component={Link} to="/view-details">
