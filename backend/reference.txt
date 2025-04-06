@@ -1,0 +1,14 @@
+chatgpt has created a structure for our backend ...
+
+
+backend/
+│── server.js
+│── .env
+│── config/
+│   ├── db.js
+│── models/
+│   ├── Camera.js
+│   ├── AuthorizedFace.js
+│── routes/
+│   ├── cameras.js
+│   ├── faces.js

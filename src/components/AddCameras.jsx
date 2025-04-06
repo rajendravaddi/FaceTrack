@@ -7,8 +7,31 @@ const AddCameras = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // State for form inputs
+  const [cameraName, setCameraName] = useState("");
+  const [ipAddress, setIpAddress] = useState("");
+  const [location, setLocation] = useState("");
+
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
+  };
+
+  // Function to send data to backend
+  const handleSubmit = async () => {
+    const response = await fetch("http://localhost:5000/api/cameras", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: cameraName, ipAddress, location }), // 🔥 fixed here
+    });
+
+    if (response.ok) {
+      alert("Camera added successfully!");
+      setCameraName("");
+      setIpAddress("");
+      setLocation("");
+    } else {
+      alert("Failed to add camera.");
+    }
   };
 
   return (
@@ -51,7 +74,7 @@ const AddCameras = () => {
           </List>
         </Box>
       </Drawer>
-      
+
       {/* Main Content Area */}
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         {/* Navbar */}
@@ -76,13 +99,35 @@ const AddCameras = () => {
             <Grid item xs={12} md={6}>
               <Paper sx={{ padding: 2 }}>
                 <Typography variant="h6">Camera Details</Typography>
-                <TextField fullWidth label="Camera Name" margin="normal" required />
-                <TextField fullWidth label="IP Address" margin="normal" required />
-                <TextField fullWidth label="Location (Optional)" margin="normal" />
+                <TextField
+                  fullWidth
+                  label="Camera Name"
+                  margin="normal"
+                  required
+                  value={cameraName}
+                  onChange={(e) => setCameraName(e.target.value)}
+                />
+                <TextField
+                  fullWidth
+                  label="IP Address"
+                  margin="normal"
+                  required
+                  value={ipAddress}
+                  onChange={(e) => setIpAddress(e.target.value)}
+                />
+                <TextField
+                  fullWidth
+                  label="Location (Optional)"
+                  margin="normal"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                />
               </Paper>
             </Grid>
           </Grid>
-          <Button variant="contained" color="primary" sx={{ mt: 3 }}>Submit</Button>
+          <Button variant="contained" color="primary" sx={{ mt: 3 }} onClick={handleSubmit}>
+            Submit
+          </Button>
         </Container>
       </Box>
     </div>

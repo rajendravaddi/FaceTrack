@@ -1,13 +1,30 @@
 import React, { useState, useEffect } from "react";
-import { AppBar, Toolbar, Typography, Button, Container, Grid, Paper, Drawer, List, ListItem, ListItemText, Box, IconButton } from "@mui/material";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  Container,
+  Grid,
+  Paper,
+  Drawer,
+  List,
+  ListItem,
+  ListItemText,
+  Box,
+  IconButton
+} from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import axios from "axios";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [username, setUsername] = useState("");
+  const [cameraCount, setCameraCount] = useState(0);
+  const [faceCount, setFaceCount] = useState(0);
 
   useEffect(() => {
     const auth = getAuth();
@@ -18,8 +35,23 @@ const Dashboard = () => {
         setUsername("");
       }
     });
-
     return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const facesRes = await axios.get("http://localhost:5000/api/faces");
+        setFaceCount(facesRes.data.length);
+
+        const camerasRes = await axios.get("http://localhost:5000/api/cameras");
+        setCameraCount(camerasRes.data.length);
+      } catch (err) {
+        console.error("Error fetching counts:", err);
+      }
+    };
+
+    fetchCounts();
   }, []);
 
   const handleLogout = async () => {
@@ -100,13 +132,13 @@ const Dashboard = () => {
             <Grid item xs={12} md={4}>
               <Paper sx={{ padding: 2, textAlign: "center" }}>
                 <Typography variant="h6">Total Cameras</Typography>
-                <Typography variant="h4">5</Typography>
+                <Typography variant="h4">{cameraCount}</Typography>
               </Paper>
             </Grid>
             <Grid item xs={12} md={4}>
               <Paper sx={{ padding: 2, textAlign: "center" }}>
                 <Typography variant="h6">Authorized Faces</Typography>
-                <Typography variant="h4">30</Typography>
+                <Typography variant="h4">{faceCount}</Typography>
               </Paper>
             </Grid>
             <Grid item xs={12} md={4}>

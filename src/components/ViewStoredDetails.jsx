@@ -16,6 +16,7 @@ import {
   ListItemText,
   Box,
   IconButton,
+  Button,
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -28,13 +29,13 @@ const ViewStoredDetails = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  // Fetch stored camera data
   useEffect(() => {
     const fetchCameras = async () => {
       try {
         const response = await fetch("http://localhost:5000/api/cameras");
         const data = await response.json();
         setCameras(data);
+
       } catch (error) {
         console.error("Error fetching cameras:", error);
       }
@@ -42,6 +43,29 @@ const ViewStoredDetails = () => {
 
     fetchCameras();
   }, []);
+
+  const handleDelete = async (id) => {
+    try {
+      const confirmDelete = window.confirm("Are you sure you want to delete this camera?");
+      if (!confirmDelete) return;
+  
+      const response = await fetch(`http://localhost:5000/api/cameras/${id}`, {
+        method: "DELETE",
+      });
+  
+      if (response.ok) {
+        // Refresh from the server to ensure updated data
+        const updatedResponse = await fetch("http://localhost:5000/api/cameras");
+        const updatedData = await updatedResponse.json();
+        setCameras(updatedData);
+      } else {
+        console.error("Failed to delete camera");
+      }
+    } catch (err) {
+      console.error("Error deleting camera:", err);
+    }
+  };
+  
 
   return (
     <div style={{ display: "flex" }}>
@@ -108,6 +132,7 @@ const ViewStoredDetails = () => {
                   <TableCell><strong>Name</strong></TableCell>
                   <TableCell><strong>IP Address</strong></TableCell>
                   <TableCell><strong>Location</strong></TableCell>
+                  <TableCell><strong>Action</strong></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -116,6 +141,15 @@ const ViewStoredDetails = () => {
                     <TableCell>{camera.name}</TableCell>
                     <TableCell>{camera.ipAddress}</TableCell>
                     <TableCell>{camera.location || "-"}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={() => handleDelete(camera._id)}
+                      >
+                        Remove
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

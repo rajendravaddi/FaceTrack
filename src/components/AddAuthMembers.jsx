@@ -1,5 +1,20 @@
 import React, { useState } from "react";
-import { AppBar, Toolbar, Typography, Button, Container, Grid, Paper, Drawer, List, ListItem, ListItemText, Box, IconButton, TextField } from "@mui/material";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  Container,
+  Grid,
+  Paper,
+  Drawer,
+  List,
+  ListItem,
+  ListItemText,
+  Box,
+  IconButton,
+  TextField
+} from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 
@@ -8,14 +23,52 @@ const AddAuthorizedMember = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [image, setImage] = useState(null);
 
+  // ✅ New states
+  const [name, setName] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
+  // ✅ Updated image upload handler
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
+      setImageFile(file);
       setImage(URL.createObjectURL(file));
+    }
+  };
+
+  // ✅ Submit handler
+  const handleSubmit = async () => {
+    if (!name || !imageFile) {
+      alert("Please enter a name and upload an image.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("image", imageFile);
+
+    try {
+      const res = await fetch("http://localhost:5000/api/authorized-faces", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        alert("Authorized face added successfully!");
+        setName("");
+        setImageFile(null);
+        setImage(null);
+      } else {
+        const error = await res.json();
+        alert("Error: " + error.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong.");
     }
   };
 
@@ -54,12 +107,12 @@ const AddAuthorizedMember = () => {
               <ListItemText primary="Live Camera Monitor" />
             </ListItem>
             <ListItem button component={Link} to="/login">
-                          <ListItemText primary="Logout" />
-                        </ListItem>
+              <ListItemText primary="Logout" />
+            </ListItem>
           </List>
         </Box>
       </Drawer>
-      
+
       {/* Main Content Area */}
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         {/* Navbar */}
@@ -83,10 +136,19 @@ const AddAuthorizedMember = () => {
             {/* Person Details */}
             <Grid item xs={12} md={6}>
               <Paper sx={{ padding: 2 }}>
-                <TextField fullWidth label="Person Name" margin="normal" required />
+                <TextField
+                  fullWidth
+                  label="Person Name"
+                  margin="normal"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
                 <TextField fullWidth label="Position (Optional)" margin="normal" />
                 {/* Image Upload */}
-                <Typography variant="h6" sx={{ mt: 2 }}>Upload Face Image</Typography>
+                <Typography variant="h6" sx={{ mt: 2 }}>
+                  Upload Face Image
+                </Typography>
                 <input
                   type="file"
                   accept="image/*"
@@ -97,7 +159,9 @@ const AddAuthorizedMember = () => {
               </Paper>
             </Grid>
           </Grid>
-          <Button variant="contained" color="primary" sx={{ mt: 3 }}>Submit</Button>
+          <Button variant="contained" color="primary" sx={{ mt: 3 }} onClick={handleSubmit}>
+            Submit
+          </Button>
         </Container>
       </Box>
     </div>
