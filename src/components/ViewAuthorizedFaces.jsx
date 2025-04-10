@@ -11,7 +11,9 @@ import {
   IconButton,
   Grid,
   Paper,
-  Button
+  Button,
+  Container,
+  TextField
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -20,6 +22,7 @@ import axios from "axios";
 const ViewAuthorizedMembers = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [faces, setFaces] = useState([]);
+  const [filterText, setFilterText] = useState("");
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -47,6 +50,10 @@ const ViewAuthorizedMembers = () => {
     }
   };
 
+  const filteredFaces = faces.filter((face) =>
+    face.name.toLowerCase().includes(filterText.toLowerCase())
+  );
+
   return (
     <div style={{ display: "flex" }}>
       <Drawer open={sidebarOpen} onClose={toggleSidebar} sx={{ width: 240, flexShrink: 0 }}>
@@ -60,16 +67,16 @@ const ViewAuthorizedMembers = () => {
               <ListItemText primary="Dashboard Overview" />
             </ListItem>
             <ListItem button component={Link} to="/add-cameras">
-              <ListItemText primary="Add User & Camera Details" />
+              <ListItemText primary="Add Cameras" />
             </ListItem>
             <ListItem button component={Link} to="/view-details">
               <ListItemText primary="View Stored Details" />
             </ListItem>
-            <ListItem button component={Link} to="/authorized-members">
-              <ListItemText primary="View Authorized Members" />
-            </ListItem>
             <ListItem button component={Link} to="/add-authorized">
               <ListItemText primary="Add Authorized Members" />
+            </ListItem>
+            <ListItem button component={Link} to="/authorized-members">
+              <ListItemText primary="View Authorized Members" />
             </ListItem>
             <ListItem button component={Link} to="/history">
               <ListItemText primary="History" />
@@ -99,36 +106,65 @@ const ViewAuthorizedMembers = () => {
           </Toolbar>
         </AppBar>
 
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            Authorized Members
-          </Typography>
-          <Grid container spacing={2}>
-            {faces.map((face) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={face._id}>
-                <Paper sx={{ p: 2, textAlign: "center" }}>
-                  <img
-                    src={`http://localhost:5000${face.imageUrl}`}
-                    alt={face.name}
-                    style={{ width: "100px", height: "100px", borderRadius: "50%" }}
-                  />
-                  <Typography variant="subtitle1" sx={{ mt: 1 }}>
-                    {face.name}
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    color="error"
-                    size="small"
-                    sx={{ mt: 1 }}
-                    onClick={() => handleRemove(face._id)}
-                  >
-                    Remove
-                  </Button>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
+        <Container sx={{ mt: 4 }}>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+            <Typography variant="h5" gutterBottom>
+              Authorized Members
+            </Typography>
+            <Button variant="contained" component={Link} to="/add-authorized">
+              + Add Authorized Face
+            </Button>
+          </Box>
+
+          <TextField
+            label="Filter by name"
+            variant="outlined"
+            fullWidth
+            value={filterText}
+            onChange={(e) => setFilterText(e.target.value)}
+            sx={{ mb: 3 }}
+          />
+
+          {filteredFaces.length === 0 ? (
+            <Box textAlign="center" mt={10}>
+              <Typography variant="h6" gutterBottom>
+                No authorized faces found.
+              </Typography>
+              <Typography variant="body1" mb={3}>
+                Try changing your search or add a new face.
+              </Typography>
+              <Button variant="outlined" component={Link} to="/add-authorized">
+                Add Authorized Face
+              </Button>
+            </Box>
+          ) : (
+            <Grid container spacing={2}>
+              {filteredFaces.map((face) => (
+                <Grid item xs={12} sm={6} md={4} lg={3} key={face._id}>
+                  <Paper sx={{ p: 2, textAlign: "center" }}>
+                    <img
+                      src={`http://localhost:5000${face.imageUrl}`}
+                      alt={face.name}
+                      style={{ width: "100px", height: "100px", borderRadius: "50%" }}
+                    />
+                    <Typography variant="subtitle1" sx={{ mt: 1 }}>
+                      {face.name}
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      color="error"
+                      size="small"
+                      sx={{ mt: 1 }}
+                      onClick={() => handleRemove(face._id)}
+                    >
+                      Remove
+                    </Button>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Container>
       </Box>
     </div>
   );

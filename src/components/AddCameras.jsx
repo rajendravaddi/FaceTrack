@@ -53,11 +53,11 @@ const AddCameras = () => {
             <ListItem button component={Link} to="/view-details">
               <ListItemText primary="View Stored Details" />
             </ListItem>
-            <ListItem button component={Link} to="/authorized-members">
-              <ListItemText primary="View Authorized Members" />
-            </ListItem>
             <ListItem button component={Link} to="/add-authorized">
               <ListItemText primary="Add Authorized Members" />
+            </ListItem>
+            <ListItem button component={Link} to="/authorized-members">
+              <ListItemText primary="View Authorized Members" />
             </ListItem>
             <ListItem button component={Link} to="/history">
               <ListItemText primary="History" />
@@ -91,9 +91,13 @@ const AddCameras = () => {
 
         {/* Camera Details Form */}
         <Container sx={{ mt: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            Add Cameras
-          </Typography>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Typography variant="h5">Add Cameras</Typography>
+          <Button variant="outlined" component={Link} to="/view-details">
+          View Cameras
+          </Button>
+          </Box>
+
           <Grid container spacing={3}>
             {/* Camera Details */}
             <Grid item xs={12} md={6}>
