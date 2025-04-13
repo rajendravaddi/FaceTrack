@@ -8,6 +8,7 @@ import AddCameras from "./components/AddCameras"; // Updated import path
 import AddAuthMembers from "./components/AddAuthMembers"; 
 import ViewStoredDetails from "./components/ViewStoredDetails.jsx";// Updated import path
 import ViewAuthorizedFaces from "./components/ViewAuthorizedFaces.jsx";
+import LiveMonitor from "./components/LiveMonitor";
 
 const App = () => {
   return (
@@ -21,6 +22,7 @@ const App = () => {
         <Route path="/add-authorized" element={<AddAuthMembers />} />
         <Route path="/view-details" element={<ViewStoredDetails />} />
         <Route path="/authorized-members" element={<ViewAuthorizedFaces/>} />
+        <Route path="/live-monitor" element={<LiveMonitor />} />
 
         
       </Routes>

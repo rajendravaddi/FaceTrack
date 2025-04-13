@@ -1,36 +1,74 @@
 import React, { useState } from "react";
-import { AppBar, Toolbar, Typography, Button, Container, Grid, Paper, Drawer, List, ListItem, ListItemText, Box, IconButton, TextField } from "@mui/material";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  Container,
+  Grid,
+  Paper,
+  Drawer,
+  List,
+  ListItem,
+  ListItemText,
+  Box,
+  IconButton,
+  TextField
+} from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 
-const AddCameras = () => {
+const AddAuthorizedMember = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [image, setImage] = useState(null);
 
-  // State for form inputs
-  const [cameraName, setCameraName] = useState("");
-  const [ipAddress, setIpAddress] = useState("");
-  const [location, setLocation] = useState("");
+  // ✅ New states
+  const [name, setName] = useState("");
+  const [imageFile, setImageFile] = useState(null);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  // Function to send data to backend
-  const handleSubmit = async () => {
-    const response = await fetch("http://localhost:5000/api/cameras", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: cameraName, ipAddress, location }), // 🔥 fixed here
-    });
+  // ✅ Updated image upload handler
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImage(URL.createObjectURL(file));
+    }
+  };
 
-    if (response.ok) {
-      alert("Camera added successfully!");
-      setCameraName("");
-      setIpAddress("");
-      setLocation("");
-    } else {
-      alert("Failed to add camera.");
+  // ✅ Submit handler
+  const handleSubmit = async () => {
+    if (!name || !imageFile) {
+      alert("Please enter a name and upload an image.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("image", imageFile);
+
+    try {
+      const res = await fetch("http://localhost:5000/api/faces", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        alert("Authorized face added successfully!");
+        setName("");
+        setImageFile(null);
+        setImage(null);
+      } else {
+        const error = await res.json();
+        alert("Error: " + error.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong.");
     }
   };
 
@@ -48,7 +86,7 @@ const AddCameras = () => {
               <ListItemText primary="Dashboard Overview" />
             </ListItem>
             <ListItem button component={Link} to="/add-cameras">
-              <ListItemText primary="Add Cameras" />
+              <ListItemText primary="Add Camera Details" />
             </ListItem>
             <ListItem button component={Link} to="/view-details">
               <ListItemText primary="View Stored Details" />
@@ -89,39 +127,35 @@ const AddCameras = () => {
           </Toolbar>
         </AppBar>
 
-        {/* Camera Details Form */}
+        {/* Add Authorized Member Form */}
         <Container sx={{ mt: 4 }}>
           <Typography variant="h5" gutterBottom>
-            Add Cameras
+            Add Authorized Member
           </Typography>
           <Grid container spacing={3}>
-            {/* Camera Details */}
+            {/* Person Details */}
             <Grid item xs={12} md={6}>
               <Paper sx={{ padding: 2 }}>
-                <Typography variant="h6">Camera Details</Typography>
                 <TextField
                   fullWidth
-                  label="Camera Name"
+                  label="Person Name"
                   margin="normal"
                   required
-                  value={cameraName}
-                  onChange={(e) => setCameraName(e.target.value)}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                 />
-                <TextField
-                  fullWidth
-                  label="IP Address"
-                  margin="normal"
-                  required
-                  value={ipAddress}
-                  onChange={(e) => setIpAddress(e.target.value)}
+                <TextField fullWidth label="Position (Optional)" margin="normal" />
+                {/* Image Upload */}
+                <Typography variant="h6" sx={{ mt: 2 }}>
+                  Upload Face Image
+                </Typography>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  style={{ display: "block", margin: "10px auto" }}
                 />
-                <TextField
-                  fullWidth
-                  label="Location (Optional)"
-                  margin="normal"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                />
+                {image && <img src={image} alt="Uploaded" style={{ width: "100px", height: "100px", marginTop: "10px" }} />}
               </Paper>
             </Grid>
           </Grid>
@@ -134,4 +168,4 @@ const AddCameras = () => {
   );
 };
 
-export default AddCameras;
+export default AddAuthorizedMember;
