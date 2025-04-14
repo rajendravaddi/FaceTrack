@@ -13,9 +13,6 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
-// Serve static files
-app.use("/uploads", express.static("uploads"));
-
 // Routes
 app.use("/api/cameras", require("./routes/cameras"));
 app.use("/api/faces", require("./routes/faces"));

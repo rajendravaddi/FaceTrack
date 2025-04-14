@@ -1,69 +1,101 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const multer = require("multer");
-const path = require("path");
+const { GridFSBucket, ObjectId } = require("mongodb");
+const { Readable } = require("stream");
+const dotenv = require("dotenv");
+
+dotenv.config();
 const router = express.Router();
-const AuthorizedFace = require("../models/AuthorizedFace");
-const fs = require("fs");
 
+const mongoURI = process.env.MONGO_URI;
+let gfsBucket;
 
-// Setup multer for storing images
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/faces/");
-  },
-  filename: function (req, file, cb) {
-    const uniqueName = `${Date.now()}-${file.originalname}`;
-    cb(null, uniqueName);
-  },
+// Connect to MongoDB
+mongoose.connect(mongoURI);
+const conn = mongoose.connection;
+
+// Init GridFSBucket after DB connection
+conn.once("open", () => {
+  gfsBucket = new GridFSBucket(conn.db, { bucketName: "faces" });
+  console.log("Connected to MongoDB and GridFSBucket initialized!");
 });
 
+// Multer Memory Storage
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// Add an authorized face (with image)
+// POST /api/faces — Upload a face image with name
 router.post("/", upload.single("image"), async (req, res) => {
   try {
     const { name } = req.body;
-    const imageUrl = `/uploads/faces/${req.file.filename}`;
+    const file = req.file;
 
-    const newFace = new AuthorizedFace({ name, imageUrl });
-    await newFace.save();
+    if (!file || !name) {
+      return res.status(400).json({ error: "Missing file or name" });
+    }
 
-    res.status(201).json(newFace);
+    const readableStream = Readable.from(file.buffer);
+
+    const uploadStream = gfsBucket.openUploadStream(`${Date.now()}-${file.originalname}`, {
+      metadata: { name },
+    });
+
+    readableStream.pipe(uploadStream);
+
+    uploadStream.on("error", (err) => {
+      console.error("Upload Error:", err);
+      res.status(500).json({ error: "Error uploading file to GridFS" });
+    });
+
+    uploadStream.on("finish", () => {
+      console.log("File uploaded to GridFS:", uploadStream.id);
+      res.status(200).json({
+        message: "Authorized face uploaded to MongoDB!",
+        fileId: uploadStream.id,
+        name,
+      });
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Upload Exception:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
-// Get all authorized faces
+// GET /api/faces — Fetch all authorized faces
 router.get("/", async (req, res) => {
   try {
-    const faces = await AuthorizedFace.find();
-    res.json(faces);
+    const files = await conn.db.collection("faces.files").find().toArray();
+
+    const faces = files.map((file) => ({
+      _id: file._id,
+      name: file.metadata?.name || "Unknown",
+      imageUrl: `/api/faces/image/${file._id}`,
+    }));
+
+    res.status(200).json(faces);
+  } catch (error) {
+    console.error("Error fetching faces:", error);
+    res.status(500).json({ error: "Failed to fetch faces" });
+  }
+});
+
+// GET /api/faces/image/:id — Serve the actual image
+router.get("/image/:id", async (req, res) => {
+  try {
+    const fileId = new ObjectId(req.params.id);
+    const downloadStream = gfsBucket.openDownloadStream(fileId);
+
+    downloadStream.on("error", (err) => {
+      console.error("Image retrieval error:", err);
+      res.status(404).json({ error: "Image not found" });
+    });
+
+    downloadStream.pipe(res);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error retrieving image:", err);
+    res.status(500).json({ error: "Failed to retrieve image" });
   }
 });
 
 module.exports = router;
-
-// DELETE an authorized face by ID
-router.delete("/:id", async (req, res) => {
-    try {
-      const face = await AuthorizedFace.findById(req.params.id);
-      if (!face) return res.status(404).json({ message: "Face not found" });
-  
-      // Remove the image file from the filesystem
-      const imagePath = path.join(__dirname, "..", face.imageUrl);
-      fs.unlink(imagePath, (err) => {
-        if (err) console.error("Failed to delete image:", err);
-      });
-  
-      // Remove from DB
-      await AuthorizedFace.findByIdAndDelete(req.params.id);
-      res.status(200).json({ message: "Authorized face deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting face:", error);
-      res.status(500).json({ message: "Server error" });
-    }
-  });
-  
