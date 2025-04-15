@@ -75,6 +75,11 @@ const AddAuthorizedMember = () => {
       console.error(err);
       alert("Something went wrong.");
     }
+    if (res.status === 409) {
+      const error = await res.json();
+      alert(error.error);
+    }
+    
   };
 
   return (

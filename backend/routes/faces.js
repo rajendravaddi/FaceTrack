@@ -11,21 +11,18 @@ const router = express.Router();
 const mongoURI = process.env.MONGO_URI;
 let gfsBucket;
 
-// Connect to MongoDB
 mongoose.connect(mongoURI);
 const conn = mongoose.connection;
 
-// Init GridFSBucket after DB connection
 conn.once("open", () => {
   gfsBucket = new GridFSBucket(conn.db, { bucketName: "faces" });
   console.log("Connected to MongoDB and GridFSBucket initialized!");
 });
 
-// Multer Memory Storage
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// POST /api/faces — Upload a face image with name and username
+// ✅ POST /api/faces — Upload with uniqueness check
 router.post("/", upload.single("image"), async (req, res) => {
   try {
     const { name, username } = req.body;
@@ -33,6 +30,18 @@ router.post("/", upload.single("image"), async (req, res) => {
 
     if (!file || !name || !username) {
       return res.status(400).json({ error: "Missing file, name, or username" });
+    }
+
+    // ✅ Check for existing face with same name and username
+    const existingFace = await conn.db.collection("faces.files").findOne({
+      "metadata.name": name,
+      "metadata.username": username,
+    });
+
+    if (existingFace) {
+      return res.status(409).json({
+        error: `Face with name "${name}" already exists for this user.`,
+      });
     }
 
     const readableStream = Readable.from(file.buffer);
@@ -123,7 +132,6 @@ router.delete("/:id", async (req, res) => {
   try {
     const fileId = new ObjectId(req.params.id);
 
-    // Delete file chunks and metadata
     await conn.db.collection("faces.files").deleteOne({ _id: fileId });
     await conn.db.collection("faces.chunks").deleteMany({ files_id: fileId });
 
