@@ -71,9 +71,17 @@ const ViewStoredDetails = () => {
     }
   };
 
-  const filteredCameras = cameras.filter((camera) =>
-    camera[filterBy]?.toLowerCase().includes(filterText.toLowerCase())
-  );
+  const filteredCameras = cameras.filter((camera) => {
+    const value = camera[filterBy];
+
+    if (Array.isArray(value)) {
+      return value.some((ip) =>
+        ip.toLowerCase().includes(filterText.toLowerCase())
+      );
+    }
+
+    return value?.toLowerCase().includes(filterText.toLowerCase());
+  });
 
   return (
     <div style={{ display: "flex" }}>
@@ -186,7 +194,11 @@ const ViewStoredDetails = () => {
                   {filteredCameras.map((camera) => (
                     <TableRow key={camera._id}>
                       <TableCell>{camera.name}</TableCell>
-                      <TableCell>{camera.ipAddress}</TableCell>
+                      <TableCell>
+                        {Array.isArray(camera.ipAddress)
+                          ? camera.ipAddress.join(", ")
+                          : camera.ipAddress || "-"}
+                      </TableCell>
                       <TableCell>{camera.location || "-"}</TableCell>
                       <TableCell>
                         <Button

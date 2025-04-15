@@ -3,40 +3,57 @@ import { AppBar, Toolbar, Typography, Button, Container, Grid, Paper, Drawer, Li
 import { Link, useNavigate } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 
+// ...all imports remain the same
+
 const AddCameras = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // State for form inputs
   const [cameraName, setCameraName] = useState("");
-  const [ipAddress, setIpAddress] = useState("");
+  const [ipAddress, setIpAddress] = useState([""]);
   const [location, setLocation] = useState("");
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  // Function to send data to backend
+  // Add new IP input (max 4)
+  const handleAddIpField = () => {
+    if (ipAddress.length < 4) {
+      setIpAddress([...ipAddress, ""]);
+    }
+  };
+
+  // Update a specific IP input
+  const handleIpChange = (index, value) => {
+    const updatedIps = [...ipAddress];
+    updatedIps[index] = value;
+    setIpAddress(updatedIps);
+  };
+
   const handleSubmit = async () => {
     const response = await fetch("http://localhost:5000/api/cameras", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: cameraName, ipAddress, location }), // 🔥 fixed here
+      body: JSON.stringify({
+        name: cameraName,
+        ipAddress,
+        location,
+      }),
     });
 
     if (response.ok) {
-      alert("Camera added successfully!");
+      alert("Camera(s) added successfully!");
       setCameraName("");
-      setIpAddress("");
+      setIpAddress([""]);
       setLocation("");
     } else {
-      alert("Failed to add camera.");
+      alert("Failed to add camera(s).");
     }
   };
 
   return (
     <div style={{ display: "flex" }}>
-      {/* Sidebar Navigation */}
       <Drawer open={sidebarOpen} onClose={toggleSidebar} sx={{ width: 240, flexShrink: 0 }}>
         <Toolbar />
         <Box sx={{ textAlign: "center", p: 2, fontFamily: "monospace", fontWeight: "bold", fontSize: "1.5rem" }}>
@@ -75,9 +92,7 @@ const AddCameras = () => {
         </Box>
       </Drawer>
 
-      {/* Main Content Area */}
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        {/* Navbar */}
         <AppBar position="static">
           <Toolbar>
             <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }} onClick={toggleSidebar}>
@@ -89,20 +104,19 @@ const AddCameras = () => {
           </Toolbar>
         </AppBar>
 
-        {/* Camera Details Form */}
         <Container sx={{ mt: 4 }}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h5">Add Cameras</Typography>
-          <Button variant="outlined" component={Link} to="/view-details">
-          View Cameras
-          </Button>
+            <Typography variant="h5">Add Cameras</Typography>
+            <Button variant="outlined" component={Link} to="/view-details">
+              View Cameras
+            </Button>
           </Box>
 
           <Grid container spacing={3}>
-            {/* Camera Details */}
             <Grid item xs={12} md={6}>
               <Paper sx={{ padding: 2 }}>
                 <Typography variant="h6">Camera Details</Typography>
+
                 <TextField
                   fullWidth
                   label="Camera Name"
@@ -111,14 +125,26 @@ const AddCameras = () => {
                   value={cameraName}
                   onChange={(e) => setCameraName(e.target.value)}
                 />
-                <TextField
-                  fullWidth
-                  label="IP Address"
-                  margin="normal"
-                  required
-                  value={ipAddress}
-                  onChange={(e) => setIpAddress(e.target.value)}
-                />
+
+                {/* Render multiple IP Address fields */}
+                {ipAddress.map((ip, index) => (
+                  <TextField
+                    key={index}
+                    fullWidth
+                    label={`IP Address ${index + 1}`}
+                    margin="normal"
+                    required
+                    value={ip}
+                    onChange={(e) => handleIpChange(index, e.target.value)}
+                  />
+                ))}
+
+                {ipAddress.length < 4 && (
+                  <Button onClick={handleAddIpField} sx={{ mt: 1 }}>
+                    + Add Camera
+                  </Button>
+                )}
+
                 <TextField
                   fullWidth
                   label="Location (Optional)"
@@ -129,6 +155,7 @@ const AddCameras = () => {
               </Paper>
             </Grid>
           </Grid>
+
           <Button variant="contained" color="primary" sx={{ mt: 3 }} onClick={handleSubmit}>
             Submit
           </Button>
