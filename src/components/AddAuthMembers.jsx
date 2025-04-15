@@ -17,11 +17,15 @@ import {
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
+import { useUsername } from "../context/UsernameContext";
+
 
 const AddAuthorizedMember = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [image, setImage] = useState(null);
+  const { username } = useUsername();
+
 
   // ✅ New states
   const [name, setName] = useState("");
@@ -50,6 +54,7 @@ const AddAuthorizedMember = () => {
     const formData = new FormData();
     formData.append("name", name);
     formData.append("image", imageFile);
+    formData.append("username", username); 
 
     try {
       const res = await fetch("http://localhost:5000/api/faces", {

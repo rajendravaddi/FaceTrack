@@ -1,0 +1,18 @@
+
+✅ Import the context hook:
+
+import { useUsername } from "../context/UsernameContext";
+
+✅ Access the username (and optionally setUsername):
+
+const { username } = useUsername();
+or if you need to update it:
+
+const { username, setUsername } = useUsername();
+
+✅ Use it in JSX:
+
+<p>{username}</p>
+or with any component:
+
+<Typography>Welcome, {username}</Typography>

@@ -25,20 +25,21 @@ conn.once("open", () => {
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// POST /api/faces — Upload a face image with name
+// POST /api/faces — Upload a face image with name and username
 router.post("/", upload.single("image"), async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, username } = req.body;
     const file = req.file;
 
-    if (!file || !name) {
-      return res.status(400).json({ error: "Missing file or name" });
+    if (!file || !name || !username) {
+      return res.status(400).json({ error: "Missing file, name, or username" });
     }
 
     const readableStream = Readable.from(file.buffer);
 
     const uploadStream = gfsBucket.openUploadStream(`${Date.now()}-${file.originalname}`, {
-      metadata: { name },
+      contentType: file.mimetype,
+      metadata: { name, username },
     });
 
     readableStream.pipe(uploadStream);
@@ -62,10 +63,19 @@ router.post("/", upload.single("image"), async (req, res) => {
   }
 });
 
-// GET /api/faces — Fetch all authorized faces
+// GET /api/faces — Fetch all authorized faces by username
 router.get("/", async (req, res) => {
   try {
-    const files = await conn.db.collection("faces.files").find().toArray();
+    const { username } = req.query;
+
+    if (!username) {
+      return res.status(400).json({ error: "Missing username" });
+    }
+
+    const files = await conn.db
+      .collection("faces.files")
+      .find({ "metadata.username": username })
+      .toArray();
 
     const faces = files.map((file) => ({
       _id: file._id,
@@ -84,17 +94,43 @@ router.get("/", async (req, res) => {
 router.get("/image/:id", async (req, res) => {
   try {
     const fileId = new ObjectId(req.params.id);
+    console.log("Fetching image with ID:", fileId);
+
+    const fileDoc = await conn.db.collection("faces.files").findOne({ _id: fileId });
+    if (!fileDoc) {
+      console.error("Image not found in GridFS!");
+      return res.status(404).json({ error: "Image not found" });
+    }
+
+    res.set("Content-Type", fileDoc.contentType || "image/jpeg");
+
     const downloadStream = gfsBucket.openDownloadStream(fileId);
 
     downloadStream.on("error", (err) => {
-      console.error("Image retrieval error:", err);
-      res.status(404).json({ error: "Image not found" });
+      console.error("Error streaming image:", err);
+      res.status(500).json({ error: "Error streaming image" });
     });
 
     downloadStream.pipe(res);
   } catch (err) {
-    console.error("Error retrieving image:", err);
+    console.error("Exception in /image/:id route:", err);
     res.status(500).json({ error: "Failed to retrieve image" });
+  }
+});
+
+// DELETE /api/faces/:id — Remove a face image from GridFS
+router.delete("/:id", async (req, res) => {
+  try {
+    const fileId = new ObjectId(req.params.id);
+
+    // Delete file chunks and metadata
+    await conn.db.collection("faces.files").deleteOne({ _id: fileId });
+    await conn.db.collection("faces.chunks").deleteMany({ files_id: fileId });
+
+    res.status(200).json({ message: "Face image deleted successfully!" });
+  } catch (error) {
+    console.error("Error deleting face:", error);
+    res.status(500).json({ error: "Failed to delete face image" });
   }
 });
 

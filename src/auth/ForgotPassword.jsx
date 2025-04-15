@@ -1,6 +1,13 @@
 import React, { useState } from "react";
-import { TextField, Button, Typography, Container, Paper, Alert } from "@mui/material";
-import { Link, useNavigate } from "react-router-dom";
+import {
+  TextField,
+  Button,
+  Typography,
+  Alert,
+  Paper,
+  Box,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import { auth } from "../firebaseConfig";
 import { sendPasswordResetEmail } from "firebase/auth";
 
@@ -29,36 +36,97 @@ const ForgotPassword = () => {
   };
 
   return (
-    <Container maxWidth="xs">
-      <Paper elevation={3} style={{ padding: 20, marginTop: 50, textAlign: "center" }}>
-        <Typography variant="h5" gutterBottom>Forgot Password</Typography>
-        {error && <Alert severity="error">{error}</Alert>}
-        {message && <Alert severity="success">{message}</Alert>}
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: "linear-gradient(to right, rgba(15,23,42,0.9), rgba(30,58,138,0.85))",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 2,
+      }}
+    >
+      <Paper
+        elevation={6}
+        sx={{
+          padding: 4,
+          borderRadius: 4,
+          backgroundColor: "rgba(255, 255, 255, 0.05)",
+          backdropFilter: "blur(10px)",
+          color: "#fff",
+          width: "100%",
+          maxWidth: 420,
+          boxShadow: "0 8px 30px rgba(0,0,0,0.3)",
+        }}
+      >
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: "bold",
+            mb: 3,
+            textAlign: "center",
+            color: "#fff",
+          }}
+        >
+          Reset Password
+        </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        {message && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            {message}
+          </Alert>
+        )}
+
         <TextField
           label="Email"
-          variant="outlined"
+          variant="filled"
           fullWidth
           margin="normal"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          sx={{
+            input: { color: "#fff" },
+            label: { color: "#ccc" },
+            backgroundColor: "rgba(255,255,255,0.1)",
+            borderRadius: 1,
+          }}
         />
-        <Button variant="contained" color="primary" fullWidth onClick={handlePasswordReset}>
-          Reset Password
+
+        <Button
+          variant="contained"
+          fullWidth
+          sx={{
+            mt: 3,
+            backgroundColor: "#16a34a",
+            fontWeight: "bold",
+            "&:hover": {
+              backgroundColor: "#15803d",
+            },
+          }}
+          onClick={handlePasswordReset}
+        >
+          Send Reset Link
         </Button>
-        <Typography variant="body2" style={{ marginTop: 10 }}>
-          Remembered your password? 
-          <Button color="primary" onClick={() => navigate("/login")} style={{ textTransform: "none" }}>
+
+        <Typography variant="body2" sx={{ mt: 3, textAlign: "center" }}>
+          Remembered your password?{" "}
+          <Button
+            color="success"
+            size="small"
+            onClick={() => navigate("/login")}
+            sx={{ textTransform: "none", fontWeight: "bold" }}
+          >
             Login
           </Button>
         </Typography>
       </Paper>
-    </Container>
+    </Box>
   );
 };
 
 export default ForgotPassword;
-
-// Added ForgotPassword component with Firebase password reset functionality.
-// Includes input validation and success/error messages.
-// Improved error handling for better user experience.
-// Added a button to navigate back to the login page.

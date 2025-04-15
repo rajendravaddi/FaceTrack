@@ -18,28 +18,36 @@ import {
 import { Link } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 import axios from "axios";
+import { useUsername } from "../context/UsernameContext";
 
 const ViewAuthorizedMembers = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [faces, setFaces] = useState([]);
   const [filterText, setFilterText] = useState("");
+  const { username } = useUsername();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  const fetchFaces = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/faces");
-      setFaces(res.data);
-    } catch (error) {
-      console.error("Error fetching authorized faces:", error);
-    }
-  };
-
   useEffect(() => {
+    if (!username) return;
+  
+    const fetchFaces = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/faces", {
+          params: { username },
+        });
+        setFaces(res.data);
+      } catch (error) {
+        console.error("Error fetching authorized faces:", error);
+      }
+    };
+  
     fetchFaces();
-  }, []);
+  }, [username]);
+  
+  
 
   const handleRemove = async (id) => {
     try {
@@ -142,11 +150,11 @@ const ViewAuthorizedMembers = () => {
               {filteredFaces.map((face) => (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={face._id}>
                   <Paper sx={{ p: 2, textAlign: "center" }}>
-                    <img
-                      src={`http://localhost:5000${face.imageUrl}`}
-                      alt={face.name}
-                      style={{ width: "100px", height: "100px", borderRadius: "50%" }}
-                    />
+                  <img
+                    src={`http://localhost:5000${face.imageUrl}`}
+                    alt={face.name}
+                   style={{ width: "100px", height: "100px", borderRadius: "50%" }}
+/>
                     <Typography variant="subtitle1" sx={{ mt: 1 }}>
                       {face.name}
                     </Typography>

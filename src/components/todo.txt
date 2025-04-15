@@ -1,0 +1,5 @@
+1.face name should be unique
+2.plus symbol for multiple images (4)
+//3.global variable for user id (done)
+4.session variable for ngrok link 
+5.live camera monitor start button removal should be done without pressing button ....

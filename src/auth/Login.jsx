@@ -1,94 +1,202 @@
 import React, { useState } from "react";
-import { TextField, Button, Typography, Container, Paper, Alert } from "@mui/material";
+import {
+  TextField,
+  Button,
+  Typography,
+  Container,
+  Paper,
+  Alert,
+  Box,
+} from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { auth, googleProvider } from "../firebaseConfig";
 import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { useUsername } from "../context/UsernameContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { setUsername } = useUsername();
 
   const handleLogin = async () => {
     setError("");
-    if (!email) return setError("Please enter an email.");
-    if (!password) return setError("Please enter a password.");
+    if (!email) return setError("Please enter your email.");
+    if (!password) return setError("Please enter your password.");
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential=await signInWithEmailAndPassword(auth, email, password);
+      const name = userCredential.user.displayName || email.split("@")[0]; // fallback if no displayName
+      setUsername(name);
       alert("Login successful!");
-      navigate("/dashboard"); // Redirect to dashboard after login
+      navigate("/dashboard");
     } catch (err) {
-      if (err.code === "auth/wrong-password") {
-        setError("Incorrect password. Please try again.");
-      } else if (err.code === "auth/user-not-found") {
-        setError("No account found with this email.");
-      } else {
-        setError("Login failed. Please try again.");
+      switch (err.code) {
+        case "auth/wrong-password":
+          setError("Incorrect password. Please try again.");
+          break;
+        case "auth/user-not-found":
+          setError("No account found with this email.");
+          break;
+        case "auth/invalid-email":
+          setError("Invalid email format.");
+          break;
+        case "auth/too-many-requests":
+          setError("Too many failed attempts. Try again later.");
+          break;
+        default:
+          setError("Login failed. Please try again.");
       }
     }
   };
 
   const handleGoogleLogin = async () => {
+    setError("");
     try {
-      await signInWithPopup(auth, googleProvider);
+      const userCredential=await signInWithPopup(auth, googleProvider);
+      const name =
+  userCredential.user.displayName ||
+  userCredential.user.email?.split("@")[0] ||
+  "User"; // fallback if no displayName
+      setUsername(name);
       alert("Login with Google successful!");
-      navigate("/dashboard"); // Redirect to dashboard after Google login
+      navigate("/dashboard");
     } catch (err) {
       setError("Google login failed. Please try again.");
     }
   };
 
   return (
-    <Container maxWidth="xs">
-      <Paper elevation={3} style={{ padding: 20, marginTop: 50, textAlign: "center" }}>
-        <Typography variant="h5" gutterBottom>Login</Typography>
-        {error && <Alert severity="error">{error}</Alert>}
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: "linear-gradient(to right, rgba(15,23,42,0.9), rgba(30,58,138,0.85))",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 2,
+      }}
+    >
+      <Paper
+        elevation={6}
+        sx={{
+          padding: 4,
+          borderRadius: 4,
+          backgroundColor: "rgba(255, 255, 255, 0.05)",
+          backdropFilter: "blur(10px)",
+          color: "#fff",
+          width: "100%",
+          maxWidth: 420,
+          boxShadow: "0 8px 30px rgba(0,0,0,0.3)",
+        }}
+      >
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: "bold",
+            mb: 3,
+            textAlign: "center",
+            color: "#fff",
+          }}
+        >
+          Login
+        </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
         <TextField
           label="Email"
-          variant="outlined"
+          variant="filled"
           fullWidth
           margin="normal"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          sx={{
+            input: { color: "#fff" },
+            label: { color: "#ccc" },
+            backgroundColor: "rgba(255,255,255,0.1)",
+            borderRadius: 1,
+          }}
         />
         <TextField
           label="Password"
           type="password"
-          variant="outlined"
+          variant="filled"
           fullWidth
           margin="normal"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          sx={{
+            input: { color: "#fff" },
+            label: { color: "#ccc" },
+            backgroundColor: "rgba(255,255,255,0.1)",
+            borderRadius: 1,
+          }}
         />
-        <Button variant="contained" color="primary" fullWidth onClick={handleLogin}>
+
+        <Button
+          variant="contained"
+          fullWidth
+          sx={{
+            mt: 3,
+            backgroundColor: "#2563eb",
+            fontWeight: "bold",
+            "&:hover": {
+              backgroundColor: "#1e40af",
+            },
+          }}
+          onClick={handleLogin}
+        >
           Login
         </Button>
+
         <Button
           variant="outlined"
-          color="secondary"
           fullWidth
           onClick={handleGoogleLogin}
-          style={{ marginTop: 10 }}
+          sx={{
+            mt: 2,
+            color: "#fff",
+            borderColor: "#fff",
+            "&:hover": {
+              backgroundColor: "rgba(255,255,255,0.1)",
+              borderColor: "#ccc",
+            },
+          }}
         >
-          Sign In with Google
+          Sign in with Google
         </Button>
-        <Typography variant="body2" style={{ marginTop: 10 }}>
-          Don't have an account? 
-          <Button color="primary" onClick={() => navigate("/signup")} style={{ textTransform: "none" }}>
+
+        <Typography
+          variant="body2"
+          sx={{ mt: 3, textAlign: "center", color: "#ccc" }}
+        >
+          Don't have an account?{" "}
+          <Button
+            color="primary"
+            onClick={() => navigate("/signup")}
+            sx={{ textTransform: "none", fontWeight: "bold" }}
+          >
             Sign Up
           </Button>
         </Typography>
-        <Typography variant="body2" style={{ marginTop: 10 }}>
-          <Link to="/forgot-password">Forgot Password?</Link>
+
+        <Typography
+          variant="body2"
+          sx={{ mt: 1, textAlign: "center", color: "#ccc" }}
+        >
+          <Link to="/forgot-password" style={{ color: "#90cdf4" }}>
+            Forgot Password?
+          </Link>
         </Typography>
       </Paper>
-    </Container>
+    </Box>
   );
 };
 
 export default Login;
-
-// Added Google Sign-In functionality while retaining all other features.
-// Improved error handling for wrong password and user-not-found scenarios.
-// Included navigation to Signup and Forgot Password pages for better user experience.
