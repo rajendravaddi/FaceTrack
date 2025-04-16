@@ -1,3 +1,4 @@
+// ViewStoredDetails.jsx
 import React, { useEffect, useState } from "react";
 import {
   AppBar,
@@ -17,20 +18,15 @@ import {
   Box,
   IconButton,
   Button,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
+import { useUsername } from "../context/UsernameContext";
 
 const ViewStoredDetails = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [cameras, setCameras] = useState([]);
-  const [filterText, setFilterText] = useState("");
-  const [filterBy, setFilterBy] = useState("name");
+  const { username } = useUsername();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -39,16 +35,26 @@ const ViewStoredDetails = () => {
   useEffect(() => {
     const fetchCameras = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/cameras");
+        const response = await fetch(`http://localhost:5000/api/cameras/${username}`);
         const data = await response.json();
-        setCameras(data);
+
+        if (Array.isArray(data)) {
+          setCameras(data);
+        } else if (data && typeof data === "object") {
+          setCameras([data]);
+        } else {
+          setCameras([]);
+        }
       } catch (error) {
         console.error("Error fetching cameras:", error);
+        setCameras([]);
       }
     };
 
-    fetchCameras();
-  }, []);
+    if (username) {
+      fetchCameras();
+    }
+  }, [username]);
 
   const handleDelete = async (id) => {
     try {
@@ -57,12 +63,23 @@ const ViewStoredDetails = () => {
 
       const response = await fetch(`http://localhost:5000/api/cameras/${id}`, {
         method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username }),
       });
 
       if (response.ok) {
-        const updatedResponse = await fetch("http://localhost:5000/api/cameras");
+        const updatedResponse = await fetch(`http://localhost:5000/api/cameras/${username}`);
         const updatedData = await updatedResponse.json();
-        setCameras(updatedData);
+
+        if (Array.isArray(updatedData)) {
+          setCameras(updatedData);
+        } else if (updatedData && typeof updatedData === "object") {
+          setCameras([updatedData]);
+        } else {
+          setCameras([]);
+        }
       } else {
         console.error("Failed to delete camera");
       }
@@ -70,18 +87,6 @@ const ViewStoredDetails = () => {
       console.error("Error deleting camera:", err);
     }
   };
-
-  const filteredCameras = cameras.filter((camera) => {
-    const value = camera[filterBy];
-
-    if (Array.isArray(value)) {
-      return value.some((ip) =>
-        ip.toLowerCase().includes(filterText.toLowerCase())
-      );
-    }
-
-    return value?.toLowerCase().includes(filterText.toLowerCase());
-  });
 
   return (
     <Box
@@ -100,7 +105,8 @@ const ViewStoredDetails = () => {
         </Box>
         <Box sx={{ overflow: "auto" }}>
           <List>
-            {[["Dashboard Overview", "/dashboard"],
+            {[
+              ["Dashboard Overview", "/dashboard"],
               ["Add Camera Details", "/add-cameras"],
               ["View Stored Details", "/view-details"],
               ["Add Authorized Members", "/add-authorized"],
@@ -108,7 +114,7 @@ const ViewStoredDetails = () => {
               ["History", "/history"],
               ["Alerts", "/alerts"],
               ["Live Camera Monitor", "/live-monitor"],
-              ["Logout", "/login"]
+              ["Logout", "/login"],
             ].map(([text, path]) => (
               <ListItem button component={Link} to={path} key={text}>
                 <ListItemText primary={text} />
@@ -145,59 +151,29 @@ const ViewStoredDetails = () => {
             <Typography variant="h5" gutterBottom sx={{ color: "#fff", fontWeight: "bold" }}>
               Stored Camera Details
             </Typography>
-            <Button
-              variant="contained"
-              component={Link}
-              to="/add-cameras"
-              sx={{
-                backgroundColor: "#2563eb",
-                "&:hover": {
-                  backgroundColor: "#1e40af",
-                },
-              }}
-            >
-              + Add Camera
-            </Button>
-          </Box>
 
-          <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-            <TextField
-              label={`Filter by ${filterBy}`}
-              variant="outlined"
-              fullWidth
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
-              sx={{ mr: 2 }}
-              InputLabelProps={{
-                style: { color: "#fff" },
-              }}
-              InputProps={{
-                style: { color: "#fff" },
-              }}
-            />
-            <FormControl variant="outlined" sx={{ minWidth: 160 }}>
-              <InputLabel sx={{ color: "#fff" }}>Filter By</InputLabel>
-              <Select
-                value={filterBy}
-                onChange={(e) => setFilterBy(e.target.value)}
-                label="Filter By"
-                sx={{
-                  color: "#fff",
-                  "& .MuiOutlinedInput-root": {
-                    borderColor: "#fff",
-                    "&:hover": {
-                      borderColor: "#ccc",
-                    },
-                  },
-                }}
+            {cameras.length === 0 ? (
+              <Button
+                variant="contained"
+                component={Link}
+                to="/add-cameras"
+                sx={{ backgroundColor: "#2563eb", "&:hover": { backgroundColor: "#1e40af" } }}
               >
-                <MenuItem value="name">Name</MenuItem>
-                <MenuItem value="ipAddress">IP Address</MenuItem>
-              </Select>
-            </FormControl>
+                + Add Camera
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                component={Link}
+                to="/add-cameras?mode=edit"
+                sx={{ backgroundColor: "#2563eb", "&:hover": { backgroundColor: "#1e40af" } }}
+              >
+                + Update Camera
+              </Button>
+            )}
           </Box>
 
-          {filteredCameras.length === 0 ? (
+          {cameras.length === 0 ? (
             <Box textAlign="center" mt={10}>
               <Typography variant="h6" gutterBottom sx={{ color: "#fff" }}>
                 No cameras added yet.
@@ -233,13 +209,13 @@ const ViewStoredDetails = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredCameras.map((camera) => (
+                  {cameras.map((camera) => (
                     <TableRow key={camera._id}>
-                      <TableCell sx={{ color: "#fff" }}>{camera.name}</TableCell>
+                      <TableCell sx={{ color: "#fff" }}>{camera.cameraName}</TableCell>
                       <TableCell sx={{ color: "#fff" }}>
-                        {Array.isArray(camera.ipAddress)
-                          ? camera.ipAddress.join(", ")
-                          : camera.ipAddress || "-"}
+                        {Array.isArray(camera.ipAddresses)
+                          ? camera.ipAddresses.join(", ")
+                          : camera.ipAddresses || "-"}
                       </TableCell>
                       <TableCell sx={{ color: "#fff" }}>{camera.location || "-"}</TableCell>
                       <TableCell>

@@ -9,6 +9,9 @@ import AddAuthMembers from "./components/AddAuthMembers";
 import ViewStoredDetails from "./components/ViewStoredDetails.jsx";
 import ViewAuthorizedFaces from "./components/ViewAuthorizedFaces.jsx";
 import LiveMonitor from "./components/LiveMonitor";
+import Alerts from "./components/Alerts.jsx";
+import History from "./components/History.jsx";
+
 import { UsernameProvider } from "./context/UsernameContext"; // Import context
 
 const App = () => {
@@ -25,6 +28,8 @@ const App = () => {
           <Route path="/view-details" element={<ViewStoredDetails />} />
           <Route path="/authorized-members" element={<ViewAuthorizedFaces />} />
           <Route path="/live-monitor" element={<LiveMonitor />} />
+          <Route path="/alerts" element={<Alerts />} />
+          <Route path="/history" element={<History />} />
         </Routes>
       </Router>
     </UsernameProvider>
