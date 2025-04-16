@@ -15,6 +15,7 @@ import {
   IconButton,
   TextField
 } from "@mui/material";
+import { deleteFaceFromNgrok } from "../utils/faceUtils";
 import { Link, useNavigate } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
@@ -84,7 +85,7 @@ const AddAuthorizedMember = () => {
 
       try {
         // Step 2: Send to ngrok server first
-        const ngrokResponse = await fetch("https://604f-34-27-75-164.ngrok-free.app/add-face", {
+        const ngrokResponse = await fetch("https://2cb8-34-27-75-164.ngrok-free.app/add-face", {
           method: "POST",
           body: formDataNgrok,
         });
@@ -112,6 +113,10 @@ const AddAuthorizedMember = () => {
             } else {
               const error = await res.json();
               alert("Error: " + error.error);
+              const result = await deleteFaceFromNgrok(username, name);
+              if(result.success){
+                alert("Faces deleted from model");
+              }
             }
 
             // Handle specific status 409 Conflict
@@ -123,6 +128,10 @@ const AddAuthorizedMember = () => {
           } catch (err) {
             console.error(err);
             alert("Something went wrong while connecting to localhost.");
+            const result = await deleteFaceFromNgrok(username, name);
+              if(result.success){
+                alert("Faces deleted from model");
+              }
           }
 
         } else {
