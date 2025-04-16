@@ -89,7 +89,7 @@ const AddAuthorizedMember = () => {
           method: "POST",
           body: formDataNgrok,
         });
-        alert("Sending data to ngrok server");
+        //alert("Sending data to ngrok server");
         if (ngrokResponse.ok) {
           console.log("Face data successfully sent to Ngrok server!");
           const formData = new FormData();
@@ -106,17 +106,17 @@ const AddAuthorizedMember = () => {
             });
 
             if (res.ok) {
-              alert("Authorized face added successfully!");
+             // alert("Authorized face added successfully!");
               setName("");
-              setImageFile(null);
+              setImageFiles(null);
               setImage(null);
             } else {
               const error = await res.json();
-              alert("Error: " + error.error);
+             // alert("Error: " + error.error);
               const result = await deleteFaceFromNgrok(username, name);
-              if(result.success){
+              /*if(result.success){
                 alert("Faces deleted from model");
-              }
+              }*/
             }
 
             // Handle specific status 409 Conflict
@@ -127,11 +127,8 @@ const AddAuthorizedMember = () => {
 
           } catch (err) {
             console.error(err);
-            alert("Something went wrong while connecting to localhost.");
-            const result = await deleteFaceFromNgrok(username, name);
-              if(result.success){
-                alert("Faces deleted from model");
-              }
+            //alert("Something went wrong while connecting to localhost.");
+            
           }
 
         } else {

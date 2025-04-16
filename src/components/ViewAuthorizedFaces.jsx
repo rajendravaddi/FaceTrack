@@ -16,6 +16,7 @@ import {
   TextField,
 } from "@mui/material";
 import { Link } from "react-router-dom";
+import { deleteFaceFromNgrok } from "../utils/faceUtils";
 import MenuIcon from "@mui/icons-material/Menu";
 import axios from "axios";
 import { useUsername } from "../context/UsernameContext";
@@ -80,12 +81,33 @@ const ViewAuthorizedMembers = () => {
   }, [username]);
 
   // ❌ Remove member and their images
-  const handleRemove = async (memberId) => {
+  /*const handleRemove = async (removeMember) => {
     try {
-      await axios.delete(`http://localhost:5000/api/faces/${memberId}`);
-      setFaces((prevFaces) => prevFaces.filter((face) => face._id !== memberId));
+      await axios.delete(`http://localhost:5000/api/faces/${removeMember._id}`);
+      setFaces((prevFaces) => prevFaces.filter((face) => face._id !== removeMember._id));
     } catch (error) {
       console.error("Error deleting face:", error);
+    }
+  };*/
+
+  const handleRemove = async (removeMember) => {
+  
+    try {
+      // Step 1: Delete from Ngrok server
+      const ngrokResponse = await deleteFaceFromNgrok(username, removeMember.name);
+  
+      if (!ngrokResponse.success) {
+        console.error("Ngrok deletion failed:", ngrokResponse.message);
+        return; // Don't proceed to local delete
+      }
+  
+      // Step 2: Delete from localhost
+      await axios.delete(`http://localhost:5000/api/faces/${removeMember._id}`);
+      setFaces((prevFaces) => prevFaces.filter((face) => face._id !== removeMember._id));
+  
+      console.log("Successfully deleted from ngrok and localhost.");
+    } catch (error) {
+      console.error("Error during face removal process:", error);
     }
   };
 
@@ -175,7 +197,7 @@ const ViewAuthorizedMembers = () => {
                       color="error"
                       size="small"
                       sx={{ mt: 1 }}
-                      onClick={() => handleRemove(face._id)}
+                      onClick={() => handleRemove(face)}
                     >
                       Remove
                     </Button>
