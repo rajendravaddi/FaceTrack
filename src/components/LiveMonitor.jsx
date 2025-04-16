@@ -1,11 +1,13 @@
 import React, { useRef, useState, useEffect } from 'react';
 import axios from 'axios';
+import { useUsername } from "../context/UsernameContext";
 
 const LiveMonitor = () => {
   const videoRef = useRef(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [frameCount, setFrameCount] = useState(1);
   const [intervalId, setIntervalId] = useState(null);
+  const { username } = useUsername();
 
   const startCamera = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -35,10 +37,11 @@ const LiveMonitor = () => {
 
     canvas.toBlob(async (blob) => {
       const formData = new FormData();
+      formData.append("user_id",username);
       formData.append("file", blob, "frame.jpg");
 
       try {
-        const res = await axios.post("https://5e1a-34-41-179-249.ngrok-free.app/test-frame", formData, {
+        const res = await axios.post("https://8873-34-57-23-42.ngrok-free.app/test-frame", formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }

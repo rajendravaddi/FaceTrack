@@ -50,36 +50,68 @@ const AddAuthorizedMember = () => {
       alert("Please enter a name and upload an image.");
       return;
     }
+    const handleAddFace = async () => {
+      // Step 1: Prepare form data for ngrok
+      const formDataNgrok = new FormData();
+      formDataNgrok.append("user_id", username);
+      formDataNgrok.append("name", name);
+      formDataNgrok.append("files", imageFile); // webcam or file input
 
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("image", imageFile);
-    formData.append("username", username); 
+      try {
+        // Step 2: Send to ngrok server first
+        const ngrokResponse = await fetch("https://8873-34-57-23-42.ngrok-free.app/add-face", {
+          method: "POST",
+          body: formDataNgrok,
+        });
+        alert("Sending data to ngrok server");
+        if (ngrokResponse.ok) {
+          console.log("Face data successfully sent to Ngrok server!");
 
-    try {
-      const res = await fetch("http://localhost:5000/api/faces", {
-        method: "POST",
-        body: formData,
-      });
+          // Step 3: Prepare form data for localhost
+          const formDataLocal = new FormData();
+          formDataLocal.append("name", name);
+          formDataLocal.append("image", imageFile);
+          formDataLocal.append("username", username);
 
-      if (res.ok) {
-        alert("Authorized face added successfully!");
-        setName("");
-        setImageFile(null);
-        setImage(null);
-      } else {
-        const error = await res.json();
-        alert("Error: " + error.error);
+          // Step 4: Send to localhost API
+          try {
+            const res = await fetch("http://localhost:5000/api/faces", {
+              method: "POST",
+              body: formDataLocal,
+            });
+
+            if (res.ok) {
+              alert("Authorized face added successfully!");
+              setName("");
+              setImageFile(null);
+              setImage(null);
+            } else {
+              const error = await res.json();
+              alert("Error: " + error.error);
+            }
+
+            // Handle specific status 409 Conflict
+            if (res.status === 409) {
+              const error = await res.json();
+              alert(error.error);
+            }
+
+          } catch (err) {
+            console.error(err);
+            alert("Something went wrong while connecting to localhost.");
+          }
+
+        } else {
+          const error = await ngrokResponse.json();
+          alert("Ngrok Error: " + error.message); // or error.error based on your backend
+        }
+
+      } catch (err) {
+        console.error(err);
+        alert("Something went wrong while connecting to Ngrok server.");
       }
-    } catch (err) {
-      console.error(err);
-      alert("Something went wrong.");
-    }
-    if (res.status === 409) {
-      const error = await res.json();
-      alert(error.error);
-    }
-    
+    };
+    await handleAddFace();
   };
 
   return (
