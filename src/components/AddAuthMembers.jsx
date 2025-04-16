@@ -17,37 +17,59 @@ import {
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
+import CloseIcon from "@mui/icons-material/Close";
 import { useUsername } from "../context/UsernameContext";
-
 
 const AddAuthorizedMember = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [image, setImage] = useState(null);
   const { username } = useUsername();
 
-
-  // ✅ New states
   const [name, setName] = useState("");
-  const [imageFile, setImageFile] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]);
+  const [previews, setPreviews] = useState([]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  // ✅ Updated image upload handler
-  const handleImageUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      setImageFile(file);
-      setImage(URL.createObjectURL(file));
+  const handleAddImageField = () => {
+    if (imageFiles.length >= 4) {
+      alert("You can upload up to 4 images only.");
+      return;
     }
+
+    setImageFiles([...imageFiles, null]);
+    setPreviews([...previews, null]);
   };
 
-  // ✅ Submit handler
+  const handleImageChange = (e, index) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const updatedFiles = [...imageFiles];
+    updatedFiles[index] = file;
+    setImageFiles(updatedFiles);
+
+    const updatedPreviews = [...previews];
+    updatedPreviews[index] = URL.createObjectURL(file);
+    setPreviews(updatedPreviews);
+  };
+
+  const handleRemoveImage = (index) => {
+    const updatedFiles = [...imageFiles];
+    const updatedPreviews = [...previews];
+
+    updatedFiles.splice(index, 1);
+    updatedPreviews.splice(index, 1);
+
+    setImageFiles(updatedFiles);
+    setPreviews(updatedPreviews);
+  };
+
   const handleSubmit = async () => {
-    if (!name || !imageFile) {
-      alert("Please enter a name and upload an image.");
+    if (!name || imageFiles.length === 0 || imageFiles.some((f) => !f)) {
+      alert("Please enter a name and upload at least one image.");
       return;
     }
     const handleAddFace = async () => {
@@ -55,29 +77,31 @@ const AddAuthorizedMember = () => {
       const formDataNgrok = new FormData();
       formDataNgrok.append("user_id", username);
       formDataNgrok.append("name", name);
-      formDataNgrok.append("files", imageFile); // webcam or file input
+      //formDataNgrok.append("files", imageFile); // webcam or file input
+      imageFiles.forEach((file) => {
+        formDataNgrok.append("files", file);
+      });
 
       try {
         // Step 2: Send to ngrok server first
-        const ngrokResponse = await fetch("https://8873-34-57-23-42.ngrok-free.app/add-face", {
+        const ngrokResponse = await fetch("https://604f-34-27-75-164.ngrok-free.app/add-face", {
           method: "POST",
           body: formDataNgrok,
         });
         alert("Sending data to ngrok server");
         if (ngrokResponse.ok) {
           console.log("Face data successfully sent to Ngrok server!");
-
-          // Step 3: Prepare form data for localhost
-          const formDataLocal = new FormData();
-          formDataLocal.append("name", name);
-          formDataLocal.append("image", imageFile);
-          formDataLocal.append("username", username);
-
+          const formData = new FormData();
+          formData.append("name", name);
+          formData.append("username", username);
+          imageFiles.forEach((file) => {
+            formData.append("images", file);
+          });
           // Step 4: Send to localhost API
           try {
             const res = await fetch("http://localhost:5000/api/faces", {
               method: "POST",
-              body: formDataLocal,
+              body: formData,
             });
 
             if (res.ok) {
@@ -112,11 +136,12 @@ const AddAuthorizedMember = () => {
       }
     };
     await handleAddFace();
+
   };
 
   return (
     <div style={{ display: "flex" }}>
-      {/* Sidebar Navigation */}
+      {/* Sidebar */}
       <Drawer open={sidebarOpen} onClose={toggleSidebar} sx={{ width: 240, flexShrink: 0 }}>
         <Toolbar />
         <Box sx={{ textAlign: "center", p: 2, fontFamily: "monospace", fontWeight: "bold", fontSize: "1.5rem" }}>
@@ -155,9 +180,8 @@ const AddAuthorizedMember = () => {
         </Box>
       </Drawer>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        {/* Navbar */}
         <AppBar position="static">
           <Toolbar>
             <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }} onClick={toggleSidebar}>
@@ -169,13 +193,11 @@ const AddAuthorizedMember = () => {
           </Toolbar>
         </AppBar>
 
-        {/* Add Authorized Member Form */}
         <Container sx={{ mt: 4 }}>
           <Typography variant="h5" gutterBottom>
             Add Authorized Member
           </Typography>
           <Grid container spacing={3}>
-            {/* Person Details */}
             <Grid item xs={12} md={6}>
               <Paper sx={{ padding: 2 }}>
                 <TextField
@@ -187,17 +209,52 @@ const AddAuthorizedMember = () => {
                   onChange={(e) => setName(e.target.value)}
                 />
                 <TextField fullWidth label="Position (Optional)" margin="normal" />
-                {/* Image Upload */}
                 <Typography variant="h6" sx={{ mt: 2 }}>
-                  Upload Face Image
+                  Upload Face Images (Max 4)
                 </Typography>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  style={{ display: "block", margin: "10px auto" }}
-                />
-                {image && <img src={image} alt="Uploaded" style={{ width: "100px", height: "100px", marginTop: "10px" }} />}
+
+                {imageFiles.map((_, index) => (
+                  <Box key={index} sx={{ position: "relative", mt: 2 }}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageChange(e, index)}
+                      style={{ display: "block", margin: "10px auto" }}
+                    />
+                    {previews[index] && (
+                      <Box sx={{ position: "relative", display: "inline-block" }}>
+                        <img
+                          src={previews[index]}
+                          alt={`Face ${index + 1}`}
+                          style={{ width: "100px", height: "100px", borderRadius: 4 }}
+                        />
+                        <IconButton
+                          size="small"
+                          onClick={() => handleRemoveImage(index)}
+                          sx={{
+                            position: "absolute",
+                            top: -10,
+                            right: -10,
+                            backgroundColor: "#fff",
+                            "&:hover": { backgroundColor: "#eee" }
+                          }}
+                        >
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    )}
+                  </Box>
+                ))}
+
+                {imageFiles.length < 4 && (
+                  <Button
+                    variant="outlined"
+                    sx={{ mt: 2 }}
+                    onClick={handleAddImageField}
+                  >
+                    + Add Face
+                  </Button>
+                )}
               </Paper>
             </Grid>
           </Grid>

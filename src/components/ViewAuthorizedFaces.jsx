@@ -13,7 +13,7 @@ import {
   Paper,
   Button,
   Container,
-  TextField
+  TextField,
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -26,13 +26,45 @@ const ViewAuthorizedMembers = () => {
   const [filterText, setFilterText] = useState("");
   const { username } = useUsername();
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+
+  // ⏳ 5-second face carousel for each member
+  const FaceImageCarousel = ({ face }) => {
+    const [index, setIndex] = useState(0);
+
+    useEffect(() => {
+      if (!face.images || face.images.length === 0) return;
+
+      const interval = setInterval(() => {
+        setIndex((prevIndex) => (prevIndex + 1) % face.images.length);
+      }, 5000);
+
+      return () => clearInterval(interval);
+    }, [face.images]);
+
+    if (!face.images || face.images.length === 0) {
+      return <Typography>No image</Typography>;
+    }
+
+    return (
+      <img
+        src={`http://localhost:5000${face.images[index].imageUrl}`}
+        alt={face.name}
+        style={{
+          width: "100px",
+          height: "100px",
+          borderRadius: "50%",
+          objectFit: "cover",
+          transition: "opacity 0.5s ease-in-out",
+        }}
+      />
+    );
   };
 
+  // 🧠 Load all authorized faces for this user
   useEffect(() => {
     if (!username) return;
-  
+
     const fetchFaces = async () => {
       try {
         const res = await axios.get("http://localhost:5000/api/faces", {
@@ -43,21 +75,21 @@ const ViewAuthorizedMembers = () => {
         console.error("Error fetching authorized faces:", error);
       }
     };
-  
+
     fetchFaces();
   }, [username]);
-  
-  
 
-  const handleRemove = async (id) => {
+  // ❌ Remove member and their images
+  const handleRemove = async (memberId) => {
     try {
-      await axios.delete(`http://localhost:5000/api/faces/${id}`);
-      setFaces(faces.filter((face) => face._id !== id));
+      await axios.delete(`http://localhost:5000/api/faces/${memberId}`);
+      setFaces((prevFaces) => prevFaces.filter((face) => face._id !== memberId));
     } catch (error) {
       console.error("Error deleting face:", error);
     }
   };
 
+  // 🔍 Filter faces by name
   const filteredFaces = faces.filter((face) =>
     face.name.toLowerCase().includes(filterText.toLowerCase())
   );
@@ -71,33 +103,19 @@ const ViewAuthorizedMembers = () => {
         </Box>
         <Box sx={{ overflow: "auto" }}>
           <List>
-            <ListItem button component={Link} to="/dashboard">
-              <ListItemText primary="Dashboard Overview" />
-            </ListItem>
-            <ListItem button component={Link} to="/add-cameras">
-              <ListItemText primary="Add Cameras" />
-            </ListItem>
-            <ListItem button component={Link} to="/view-details">
-              <ListItemText primary="View Stored Details" />
-            </ListItem>
-            <ListItem button component={Link} to="/add-authorized">
-              <ListItemText primary="Add Authorized Members" />
-            </ListItem>
-            <ListItem button component={Link} to="/authorized-members">
-              <ListItemText primary="View Authorized Members" />
-            </ListItem>
-            <ListItem button component={Link} to="/history">
-              <ListItemText primary="History" />
-            </ListItem>
-            <ListItem button component={Link} to="/alerts">
-              <ListItemText primary="Alerts" />
-            </ListItem>
-            <ListItem button component={Link} to="/live-monitor">
-              <ListItemText primary="Live Camera Monitor" />
-            </ListItem>
-            <ListItem button component={Link} to="/login">
-              <ListItemText primary="Logout" />
-            </ListItem>
+            {[["Dashboard Overview", "/dashboard"],
+              ["Add Cameras", "/add-cameras"],
+              ["View Stored Details", "/view-details"],
+              ["Add Authorized Members", "/add-authorized"],
+              ["View Authorized Members", "/authorized-members"],
+              ["History", "/history"],
+              ["Alerts", "/alerts"],
+              ["Live Camera Monitor", "/live-monitor"],
+              ["Logout", "/login"]].map(([label, path]) => (
+              <ListItem button component={Link} to={path} key={label}>
+                <ListItemText primary={label} />
+              </ListItem>
+            ))}
           </List>
         </Box>
       </Drawer>
@@ -116,9 +134,7 @@ const ViewAuthorizedMembers = () => {
 
         <Container sx={{ mt: 4 }}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="h5" gutterBottom>
-              Authorized Members
-            </Typography>
+            <Typography variant="h5">Authorized Members</Typography>
             <Button variant="contained" component={Link} to="/add-authorized">
               + Add Authorized Face
             </Button>
@@ -150,11 +166,7 @@ const ViewAuthorizedMembers = () => {
               {filteredFaces.map((face) => (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={face._id}>
                   <Paper sx={{ p: 2, textAlign: "center" }}>
-                  <img
-                    src={`http://localhost:5000${face.imageUrl}`}
-                    alt={face.name}
-                   style={{ width: "100px", height: "100px", borderRadius: "50%" }}
-/>
+                    <FaceImageCarousel face={face} />
                     <Typography variant="subtitle1" sx={{ mt: 1 }}>
                       {face.name}
                     </Typography>
