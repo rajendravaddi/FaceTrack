@@ -29,7 +29,6 @@ const ViewAuthorizedMembers = () => {
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
-  // ⏳ 5-second face carousel for each member
   const FaceImageCarousel = ({ face }) => {
     const [index, setIndex] = useState(0);
 
@@ -62,7 +61,6 @@ const ViewAuthorizedMembers = () => {
     );
   };
 
-  // 🧠 Load all authorized faces for this user
   useEffect(() => {
     if (!username) return;
 
@@ -80,44 +78,34 @@ const ViewAuthorizedMembers = () => {
     fetchFaces();
   }, [username]);
 
-  // ❌ Remove member and their images
-  /*const handleRemove = async (removeMember) => {
-    try {
-      await axios.delete(`http://localhost:5000/api/faces/${removeMember._id}`);
-      setFaces((prevFaces) => prevFaces.filter((face) => face._id !== removeMember._id));
-    } catch (error) {
-      console.error("Error deleting face:", error);
-    }
-  };*/
-
   const handleRemove = async (removeMember) => {
-  
     try {
-      // Step 1: Delete from Ngrok server
       const ngrokResponse = await deleteFaceFromNgrok(username, removeMember.name);
-  
+
       if (!ngrokResponse.success) {
         console.error("Ngrok deletion failed:", ngrokResponse.message);
-        return; // Don't proceed to local delete
+        return;
       }
-  
-      // Step 2: Delete from localhost
+
       await axios.delete(`http://localhost:5000/api/faces/${removeMember._id}`);
       setFaces((prevFaces) => prevFaces.filter((face) => face._id !== removeMember._id));
-  
-      console.log("Successfully deleted from ngrok and localhost.");
     } catch (error) {
       console.error("Error during face removal process:", error);
     }
   };
 
-  // 🔍 Filter faces by name
   const filteredFaces = faces.filter((face) =>
     face.name.toLowerCase().includes(filterText.toLowerCase())
   );
 
   return (
-    <div style={{ display: "flex" }}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: "linear-gradient(to right, rgba(15,23,42,0.9), rgba(30,58,138,0.85))",
+        display: "flex",
+      }}
+    >
       <Drawer open={sidebarOpen} onClose={toggleSidebar} sx={{ width: 240, flexShrink: 0 }}>
         <Toolbar />
         <Box sx={{ textAlign: "center", p: 2, fontFamily: "monospace", fontWeight: "bold", fontSize: "1.5rem" }}>
@@ -125,7 +113,8 @@ const ViewAuthorizedMembers = () => {
         </Box>
         <Box sx={{ overflow: "auto" }}>
           <List>
-            {[["Dashboard Overview", "/dashboard"],
+            {[
+              ["Dashboard Overview", "/dashboard"],
               ["Add Cameras", "/add-cameras"],
               ["View Stored Details", "/view-details"],
               ["Add Authorized Members", "/add-authorized"],
@@ -133,7 +122,8 @@ const ViewAuthorizedMembers = () => {
               ["History", "/history"],
               ["Alerts", "/alerts"],
               ["Live Camera Monitor", "/live-monitor"],
-              ["Logout", "/login"]].map(([label, path]) => (
+              ["Logout", "/login"],
+            ].map(([label, path]) => (
               <ListItem button component={Link} to={path} key={label}>
                 <ListItemText primary={label} />
               </ListItem>
@@ -143,12 +133,15 @@ const ViewAuthorizedMembers = () => {
       </Drawer>
 
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        <AppBar position="static">
+        <AppBar position="static" sx={{ backgroundColor: "rgba(255,255,255,0.05)", backdropFilter: "blur(10px)" }}>
           <Toolbar>
             <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }} onClick={toggleSidebar}>
               <MenuIcon />
             </IconButton>
-            <Typography variant="h4" sx={{ flexGrow: 1, fontFamily: "monospace", fontWeight: "bold", letterSpacing: 2 }}>
+            <Typography
+              variant="h4"
+              sx={{ flexGrow: 1, fontFamily: "monospace", fontWeight: "bold", letterSpacing: 2, color: "#fff" }}
+            >
               FaceTrack
             </Typography>
           </Toolbar>
@@ -156,7 +149,7 @@ const ViewAuthorizedMembers = () => {
 
         <Container sx={{ mt: 4 }}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="h5">Authorized Members</Typography>
+            <Typography variant="h5" sx={{ color: "#fff" }}>Authorized Members</Typography>
             <Button variant="contained" component={Link} to="/add-authorized">
               + Add Authorized Face
             </Button>
@@ -168,11 +161,12 @@ const ViewAuthorizedMembers = () => {
             fullWidth
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
-            sx={{ mb: 3 }}
+            sx={{ mb: 3, backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 1, input: { color: "#fff" } }}
+            InputLabelProps={{ style: { color: "#ccc" } }}
           />
 
           {filteredFaces.length === 0 ? (
-            <Box textAlign="center" mt={10}>
+            <Box textAlign="center" mt={10} color="#fff">
               <Typography variant="h6" gutterBottom>
                 No authorized faces found.
               </Typography>
@@ -187,9 +181,19 @@ const ViewAuthorizedMembers = () => {
             <Grid container spacing={2}>
               {filteredFaces.map((face) => (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={face._id}>
-                  <Paper sx={{ p: 2, textAlign: "center" }}>
+                  <Paper
+                    sx={{
+                      p: 2,
+                      textAlign: "center",
+                      backgroundColor: "rgba(255,255,255,0.05)",
+                      backdropFilter: "blur(10px)",
+                      color: "#fff",
+                      borderRadius: 2,
+                      boxShadow: "0 8px 30px rgba(0,0,0,0.3)",
+                    }}
+                  >
                     <FaceImageCarousel face={face} />
-                    <Typography variant="subtitle1" sx={{ mt: 1 }}>
+                    <Typography variant="subtitle1" sx={{ mt: 1, color: "#fff" }}>
                       {face.name}
                     </Typography>
                     <Button
@@ -208,7 +212,7 @@ const ViewAuthorizedMembers = () => {
           )}
         </Container>
       </Box>
-    </div>
+    </Box>
   );
 };
 

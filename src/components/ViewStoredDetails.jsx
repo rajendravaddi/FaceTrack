@@ -84,7 +84,15 @@ const ViewStoredDetails = () => {
   });
 
   return (
-    <div style={{ display: "flex" }}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: "linear-gradient(to right, rgba(15,23,42,0.9), rgba(30,58,138,0.85))",
+        display: "flex",
+        flexDirection: "row",
+      }}
+    >
+      {/* Sidebar */}
       <Drawer open={sidebarOpen} onClose={toggleSidebar} sx={{ width: 240, flexShrink: 0 }}>
         <Toolbar />
         <Box sx={{ textAlign: "center", p: 2, fontFamily: "monospace", fontWeight: "bold", fontSize: "1.5rem" }}>
@@ -92,44 +100,41 @@ const ViewStoredDetails = () => {
         </Box>
         <Box sx={{ overflow: "auto" }}>
           <List>
-            <ListItem button component={Link} to="/dashboard">
-              <ListItemText primary="Dashboard Overview" />
-            </ListItem>
-            <ListItem button component={Link} to="/add-cameras">
-              <ListItemText primary="Add Cameras" />
-            </ListItem>
-            <ListItem button component={Link} to="/view-details">
-              <ListItemText primary="View Stored Details" />
-            </ListItem>
-            <ListItem button component={Link} to="/add-authorized">
-              <ListItemText primary="Add Authorized Members" />
-            </ListItem>
-            <ListItem button component={Link} to="/authorized-members">
-              <ListItemText primary="View Authorized Members" />
-            </ListItem>
-            <ListItem button component={Link} to="/history">
-              <ListItemText primary="History" />
-            </ListItem>
-            <ListItem button component={Link} to="/alerts">
-              <ListItemText primary="Alerts" />
-            </ListItem>
-            <ListItem button component={Link} to="/live-monitor">
-              <ListItemText primary="Live Camera Monitor" />
-            </ListItem>
-            <ListItem button component={Link} to="/login">
-              <ListItemText primary="Logout" />
-            </ListItem>
+            {[["Dashboard Overview", "/dashboard"],
+              ["Add Camera Details", "/add-cameras"],
+              ["View Stored Details", "/view-details"],
+              ["Add Authorized Members", "/add-authorized"],
+              ["View Authorized Members", "/authorized-members"],
+              ["History", "/history"],
+              ["Alerts", "/alerts"],
+              ["Live Camera Monitor", "/live-monitor"],
+              ["Logout", "/login"]
+            ].map(([text, path]) => (
+              <ListItem button component={Link} to={path} key={text}>
+                <ListItemText primary={text} />
+              </ListItem>
+            ))}
           </List>
         </Box>
       </Drawer>
 
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        <AppBar position="static">
+      {/* Main Content */}
+      <Box sx={{ flexGrow: 1, p: 3 }}>
+        <AppBar position="static" sx={{ backgroundColor: "rgba(255,255,255,0.05)", backdropFilter: "blur(10px)" }}>
           <Toolbar>
-            <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }} onClick={toggleSidebar}>
+            <IconButton edge="start" color="inherit" onClick={toggleSidebar} sx={{ mr: 2 }}>
               <MenuIcon />
             </IconButton>
-            <Typography variant="h4" sx={{ flexGrow: 1, fontFamily: "monospace", fontWeight: "bold", letterSpacing: 2 }}>
+            <Typography
+              variant="h4"
+              sx={{
+                flexGrow: 1,
+                fontFamily: "monospace",
+                fontWeight: "bold",
+                letterSpacing: 2,
+                color: "#fff",
+              }}
+            >
               FaceTrack
             </Typography>
           </Toolbar>
@@ -137,10 +142,20 @@ const ViewStoredDetails = () => {
 
         <Container sx={{ mt: 4 }}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="h5" gutterBottom>
+            <Typography variant="h5" gutterBottom sx={{ color: "#fff", fontWeight: "bold" }}>
               Stored Camera Details
             </Typography>
-            <Button variant="contained" component={Link} to="/add-cameras">
+            <Button
+              variant="contained"
+              component={Link}
+              to="/add-cameras"
+              sx={{
+                backgroundColor: "#2563eb",
+                "&:hover": {
+                  backgroundColor: "#1e40af",
+                },
+              }}
+            >
               + Add Camera
             </Button>
           </Box>
@@ -153,13 +168,28 @@ const ViewStoredDetails = () => {
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
               sx={{ mr: 2 }}
+              InputLabelProps={{
+                style: { color: "#fff" },
+              }}
+              InputProps={{
+                style: { color: "#fff" },
+              }}
             />
             <FormControl variant="outlined" sx={{ minWidth: 160 }}>
-              <InputLabel>Filter By</InputLabel>
+              <InputLabel sx={{ color: "#fff" }}>Filter By</InputLabel>
               <Select
                 value={filterBy}
                 onChange={(e) => setFilterBy(e.target.value)}
                 label="Filter By"
+                sx={{
+                  color: "#fff",
+                  "& .MuiOutlinedInput-root": {
+                    borderColor: "#fff",
+                    "&:hover": {
+                      borderColor: "#ccc",
+                    },
+                  },
+                }}
               >
                 <MenuItem value="name">Name</MenuItem>
                 <MenuItem value="ipAddress">IP Address</MenuItem>
@@ -169,42 +199,62 @@ const ViewStoredDetails = () => {
 
           {filteredCameras.length === 0 ? (
             <Box textAlign="center" mt={10}>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" gutterBottom sx={{ color: "#fff" }}>
                 No cameras added yet.
               </Typography>
-              <Typography variant="body1" mb={3}>
+              <Typography variant="body1" mb={3} sx={{ color: "#ccc" }}>
                 Start by adding a camera to begin monitoring your surroundings.
               </Typography>
-              <Button variant="outlined" component={Link} to="/add-cameras">
+              <Button
+                variant="outlined"
+                component={Link}
+                to="/add-cameras"
+                sx={{
+                  borderColor: "#fff",
+                  color: "#fff",
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    borderColor: "#ccc",
+                  },
+                }}
+              >
                 Add Camera Now
               </Button>
             </Box>
           ) : (
-            <Paper>
+            <Paper sx={{ backgroundColor: "rgba(255, 255, 255, 0.05)", padding: 3, borderRadius: 2 }}>
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell><strong>Name</strong></TableCell>
-                    <TableCell><strong>IP Address</strong></TableCell>
-                    <TableCell><strong>Location</strong></TableCell>
-                    <TableCell><strong>Action</strong></TableCell>
+                    <TableCell sx={{ color: "#fff" }}><strong>Name</strong></TableCell>
+                    <TableCell sx={{ color: "#fff" }}><strong>IP Address</strong></TableCell>
+                    <TableCell sx={{ color: "#fff" }}><strong>Location</strong></TableCell>
+                    <TableCell sx={{ color: "#fff" }}><strong>Action</strong></TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {filteredCameras.map((camera) => (
                     <TableRow key={camera._id}>
-                      <TableCell>{camera.name}</TableCell>
-                      <TableCell>
+                      <TableCell sx={{ color: "#fff" }}>{camera.name}</TableCell>
+                      <TableCell sx={{ color: "#fff" }}>
                         {Array.isArray(camera.ipAddress)
                           ? camera.ipAddress.join(", ")
                           : camera.ipAddress || "-"}
                       </TableCell>
-                      <TableCell>{camera.location || "-"}</TableCell>
+                      <TableCell sx={{ color: "#fff" }}>{camera.location || "-"}</TableCell>
                       <TableCell>
                         <Button
                           variant="outlined"
                           color="error"
                           onClick={() => handleDelete(camera._id)}
+                          sx={{
+                            borderColor: "#fff",
+                            color: "#fff",
+                            "&:hover": {
+                              backgroundColor: "rgba(255,255,255,0.1)",
+                              borderColor: "#ccc",
+                            },
+                          }}
                         >
                           Remove
                         </Button>
@@ -217,7 +267,7 @@ const ViewStoredDetails = () => {
           )}
         </Container>
       </Box>
-    </div>
+    </Box>
   );
 };
 
