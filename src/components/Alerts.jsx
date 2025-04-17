@@ -31,7 +31,7 @@ const Alerts = () => {
 
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("unknownFaces") || "[]");
-  
+
     const alertsArray = stored.map((alert) => ({
       id: alert.name, // unique per session
       name: alert.name,
@@ -39,7 +39,7 @@ const Alerts = () => {
       image: alert.image || "", // already contains base64 string
       original_image64: alert.original_image,
     }));
-  
+
     setAlerts(alertsArray);
   }, []);
 
@@ -47,39 +47,39 @@ const Alerts = () => {
 
   const handleRemoveAlert = async (alert_) => {
     try {
-          const ngrokResponse = await deleteFaceFromNgrok(username, alert_.name);
-    
-          if (!ngrokResponse.success) {
-            console.error("Ngrok deletion failed:", ngrokResponse.message);
-            return;
-          }
-  
-        } catch (error) {
-          console.error("Error during face removal process:", error);
-        }
+      const ngrokResponse = await deleteFaceFromNgrok(username, alert_.name);
+
+      if (!ngrokResponse.success) {
+        console.error("Ngrok deletion failed:", ngrokResponse.message);
+        return;
+      }
+
+    } catch (error) {
+      console.error("Error during face removal process:", error);
+    }
 
     const updatedAlerts = alerts.filter((alert) => alert.id !== alert_.id);
     setAlerts(updatedAlerts);
-  
+
     // Filter it out of localStorage
     const stored = JSON.parse(localStorage.getItem("unknownFaces") || "[]");
     const newStored = stored.filter((alert) => alert.name !== alert_.id);
     localStorage.setItem("unknownFaces", JSON.stringify(newStored));
-  
+
     console.log(`Alert ${alert_.id} removed for ${username}`);
   };
   const [openDialog, setOpenDialog] = useState(false);
-const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
 
-const handleImageClick = (image) => {
-  setSelectedImage(image);
-  setOpenDialog(true);
-};
+  const handleImageClick = (image) => {
+    setSelectedImage(image);
+    setOpenDialog(true);
+  };
 
-const handleCloseDialog = () => {
-  setOpenDialog(false);
-  setSelectedImage(null);
-};
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedImage(null);
+  };
 
   const handleAuthorize = (id) => {
     console.log(`Authorizing alert ${id} for ${username}`);
@@ -182,17 +182,17 @@ const handleCloseDialog = () => {
                 >
                   {/* Image rendering */}
                   <img
-    src={alert.image} // Use 'alert.image' instead of 'alert.imageUrl'
-    alt={alert.name}
-    onClick={() => handleImageClick(alert.original_image64)}
-    style={{
-        width: 100,
-        height: 100,
-        objectFit: "cover",
-        borderRadius: "50%",
-        marginRight: 20,
-    }}
-/>
+                    src={alert.image} // Use 'alert.image' instead of 'alert.imageUrl'
+                    alt={alert.name}
+                    onClick={() => handleImageClick(alert.original_image64)}
+                    style={{
+                      width: 100,
+                      height: 100,
+                      objectFit: "cover",
+                      borderRadius: "50%",
+                      marginRight: 20,
+                    }}
+                  />
                   <Typography variant="body1" sx={{ color: "#fff", fontWeight: "bold", flexGrow: 1 }}>
                     {alert.name} detected
                   </Typography>
@@ -217,32 +217,32 @@ const handleCloseDialog = () => {
           </Paper>
         </Container>
         {/* Dialog to show enlarged image */}
-<Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-  <DialogTitle>
-    Face Snapshot
-    <IconButton
-      aria-label="close"
-      onClick={handleCloseDialog}
-      sx={{
-        position: "absolute",
-        right: 8,
-        top: 8,
-        color: (theme) => theme.palette.grey[500],
-      }}
-    >
-      <CloseIcon />
-    </IconButton>
-  </DialogTitle>
-  <DialogContent>
-    {selectedImage && (
-      <img
-        src={selectedImage}
-        alt="Enlarged Face"
-        style={{ width: "100%", height: "auto", borderRadius: "12px" }}
-      />
-    )}
-  </DialogContent>
-</Dialog>
+        <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+          <DialogTitle>
+            Face Snapshot
+            <IconButton
+              aria-label="close"
+              onClick={handleCloseDialog}
+              sx={{
+                position: "absolute",
+                right: 8,
+                top: 8,
+                color: (theme) => theme.palette.grey[500],
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent>
+            {selectedImage && (
+              <img
+                src={selectedImage}
+                alt="Enlarged Face"
+                style={{ width: "100%", height: "auto", borderRadius: "12px" }}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
 
       </Box>
     </Box>

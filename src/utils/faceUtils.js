@@ -6,7 +6,7 @@ export const deleteFaceFromNgrok = async (username, name) => {
   formData.append("name", name);
 
   try {
-    const response = await fetch("https://6a0b-35-221-246-145.ngrok-free.app/delete-face", {
+    const response = await fetch("https://b04c-35-194-153-195.ngrok-free.app/delete-face", {
       method: "POST",
       body: formData,
     });

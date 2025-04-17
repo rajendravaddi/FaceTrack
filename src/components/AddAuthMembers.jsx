@@ -101,7 +101,8 @@ const AddAuthorizedMember = () => {
       });
 
       try {
-        const ngrokResponse = await fetch("https://6a0b-35-221-246-145.ngrok-free.app/add-face", {
+        // Step 2: Send to ngrok server first
+        const ngrokResponse = await fetch("https://b04c-35-194-153-195.ngrok-free.app/add-face", {
           method: "POST",
           body: formDataNgrok,
         });
