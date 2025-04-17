@@ -1,6 +1,4 @@
-// src/components/Alerts.jsx
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Drawer,
@@ -13,12 +11,21 @@ import {
   ListItemText,
   Container,
   Paper,
+  Button,
 } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
+import { useUsername } from "../context/UsernameContext";
+import saifImage from "../assets/saif.jpeg"; // Dummy image
 
 const Alerts = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [alerts, setAlerts] = useState([
+    { id: 1, imageUrl: saifImage }, // Default alert with dummy image
+  ]);
+  const { username } = useUsername(); // 🔐 Get logged-in user
+  const navigate = useNavigate(); // Hook for navigation
+
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   const menuItems = [
@@ -33,6 +40,22 @@ const Alerts = () => {
     ["Logout", "/login"],
   ];
 
+  // Handle "Remove" button action
+  const handleRemoveAlert = (id) => {
+    // You would typically send a request to the server to delete it for the current user
+    setAlerts((prev) => prev.filter((alert) => alert.id !== id));
+    console.log(`Alert ${id} removed for ${username}`); // Log to verify user removal
+  };
+
+  // Handle "Authorize Him" action (redirects to AddAuthorizedMembers page)
+  const handleAuthorize = (id) => {
+    console.log(`Authorizing alert ${id} for ${username}`); // Log to verify authorization
+
+    // Redirecting to the "Add Authorized Member" page
+    // You can also pass any data (like the image) via the URL or as state if needed
+    navigate("/add-authorized", { state: { alertId: id } });
+  };
+
   return (
     <Box
       sx={{
@@ -43,21 +66,9 @@ const Alerts = () => {
       }}
     >
       {/* Sidebar */}
-      <Drawer
-        open={sidebarOpen}
-        onClose={toggleSidebar}
-        sx={{ width: 240, flexShrink: 0 }}
-      >
+      <Drawer open={sidebarOpen} onClose={toggleSidebar} sx={{ width: 240, flexShrink: 0 }}>
         <Toolbar />
-        <Box
-          sx={{
-            textAlign: "center",
-            p: 2,
-            fontFamily: "monospace",
-            fontWeight: "bold",
-            fontSize: "1.5rem",
-          }}
-        >
+        <Box sx={{ textAlign: "center", p: 2, fontFamily: "monospace", fontWeight: "bold", fontSize: "1.5rem" }}>
           FaceTrack
         </Box>
         <Box sx={{ overflow: "auto" }}>
@@ -75,18 +86,10 @@ const Alerts = () => {
       <Box sx={{ flexGrow: 1, p: 3 }}>
         <AppBar
           position="static"
-          sx={{
-            backgroundColor: "rgba(255,255,255,0.05)",
-            backdropFilter: "blur(10px)",
-          }}
+          sx={{ backgroundColor: "rgba(255,255,255,0.05)", backdropFilter: "blur(10px)" }}
         >
           <Toolbar>
-            <IconButton
-              edge="start"
-              color="inherit"
-              onClick={toggleSidebar}
-              sx={{ mr: 2 }}
-            >
+            <IconButton edge="start" color="inherit" onClick={toggleSidebar} sx={{ mr: 2 }}>
               <MenuIcon />
             </IconButton>
             <Typography
@@ -116,14 +119,57 @@ const Alerts = () => {
               boxShadow: "0 8px 30px rgba(0,0,0,0.3)",
             }}
           >
-            <Typography
-              variant="h5"
-              gutterBottom
-              sx={{ fontWeight: "bold", color: "#fff" }}
-            >
+            <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#fff" }}>
               Alerts
             </Typography>
-            {/* TODO: Add your alerts content here */}
+
+            {alerts.length === 0 ? (
+              <Typography>No alerts to show.</Typography>
+            ) : (
+              alerts.map((alert) => (
+                <Box
+                  key={alert.id}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginBottom: 2,
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    padding: 2,
+                    borderRadius: 2,
+                  }}
+                >
+                  <img
+                    src={alert.imageUrl}
+                    alt="Alert"
+                    style={{
+                      width: 100,
+                      height: 100,
+                      objectFit: "cover",
+                      borderRadius: "50%",
+                      marginRight: 20,
+                    }}
+                  />
+                  <Typography variant="body1" sx={{ color: "#fff", fontWeight: "bold", flexGrow: 1 }}>
+                    Unknown person detected
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    sx={{ marginRight: 2 }}
+                    onClick={() => handleAuthorize(alert.id)}
+                  >
+                    Authorize Him
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={() => handleRemoveAlert(alert.id)}
+                  >
+                    Remove
+                  </Button>
+                </Box>
+              ))
+            )}
           </Paper>
         </Container>
       </Box>

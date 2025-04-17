@@ -1,6 +1,6 @@
 // AddAuthorizedMember.js
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -18,19 +18,35 @@ import {
   Paper
 } from "@mui/material";
 import { deleteFaceFromNgrok } from "../utils/faceUtils";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import { useUsername } from "../context/UsernameContext";
 
 const AddAuthorizedMember = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { prefillImage } = location.state || {};
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { username } = useUsername();
 
   const [name, setName] = useState("");
   const [imageFiles, setImageFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
+
+  useEffect(() => {
+    if (prefillImage) {
+      // Convert base64 string to a Blob and File
+      fetch(prefillImage)
+        .then(res => res.blob())
+        .then(blob => {
+          const file = new File([blob], "unknown_face.jpg", { type: blob.type });
+          setImageFiles([file]);
+          setPreviews([URL.createObjectURL(file)]);
+        });
+    }
+  }, [prefillImage]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -109,6 +125,7 @@ const AddAuthorizedMember = () => {
               setName("");
               setImageFiles([]);
               setPreviews([]);
+              navigate("/authorized-members");
             } else {
               await deleteFaceFromNgrok(username, name);
               if (res.status === 409) {
