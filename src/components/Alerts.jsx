@@ -8,6 +8,9 @@ import {
   Typography,
   List,
   ListItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
   ListItemText,
   Container,
   Paper,
@@ -16,17 +19,72 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useUsername } from "../context/UsernameContext";
-import saifImage from "../assets/saif.jpeg"; // Dummy image
+import CloseIcon from "@mui/icons-material/Close";
+import { deleteFaceFromNgrok } from "../utils/faceUtils";
+
 
 const Alerts = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [alerts, setAlerts] = useState([
-    { id: 1, imageUrl: saifImage }, // Default alert with dummy image
-  ]);
-  const { username } = useUsername(); // 🔐 Get logged-in user
-  const navigate = useNavigate(); // Hook for navigation
+  const [alerts, setAlerts] = useState([]);
+  const { username } = useUsername();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("unknownFaces") || "[]");
+  
+    const alertsArray = stored.map((alert) => ({
+      id: alert.name, // unique per session
+      name: alert.name,
+      timestamp: alert.timestamp,
+      image: alert.image || "", // already contains base64 string
+      original_image64: alert.original_image,
+    }));
+  
+    setAlerts(alertsArray);
+  }, []);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+
+  const handleRemoveAlert = async (alert_) => {
+    try {
+          const ngrokResponse = await deleteFaceFromNgrok(username, alert_.name);
+    
+          if (!ngrokResponse.success) {
+            console.error("Ngrok deletion failed:", ngrokResponse.message);
+            return;
+          }
+  
+        } catch (error) {
+          console.error("Error during face removal process:", error);
+        }
+
+    const updatedAlerts = alerts.filter((alert) => alert.id !== alert_.id);
+    setAlerts(updatedAlerts);
+  
+    // Filter it out of localStorage
+    const stored = JSON.parse(localStorage.getItem("unknownFaces") || "[]");
+    const newStored = stored.filter((alert) => alert.name !== alert_.id);
+    localStorage.setItem("unknownFaces", JSON.stringify(newStored));
+  
+    console.log(`Alert ${alert_.id} removed for ${username}`);
+  };
+  const [openDialog, setOpenDialog] = useState(false);
+const [selectedImage, setSelectedImage] = useState(null);
+
+const handleImageClick = (image) => {
+  setSelectedImage(image);
+  setOpenDialog(true);
+};
+
+const handleCloseDialog = () => {
+  setOpenDialog(false);
+  setSelectedImage(null);
+};
+
+  const handleAuthorize = (id) => {
+    console.log(`Authorizing alert ${id} for ${username}`);
+    navigate("/add-authorized", { state: { alertId: id } });
+  };
 
   const menuItems = [
     ["Dashboard Overview", "/dashboard"],
@@ -39,22 +97,6 @@ const Alerts = () => {
     ["Live Camera Monitor", "/live-monitor"],
     ["Logout", "/login"],
   ];
-
-  // Handle "Remove" button action
-  const handleRemoveAlert = (id) => {
-    // You would typically send a request to the server to delete it for the current user
-    setAlerts((prev) => prev.filter((alert) => alert.id !== id));
-    console.log(`Alert ${id} removed for ${username}`); // Log to verify user removal
-  };
-
-  // Handle "Authorize Him" action (redirects to AddAuthorizedMembers page)
-  const handleAuthorize = (id) => {
-    console.log(`Authorizing alert ${id} for ${username}`); // Log to verify authorization
-
-    // Redirecting to the "Add Authorized Member" page
-    // You can also pass any data (like the image) via the URL or as state if needed
-    navigate("/add-authorized", { state: { alertId: id } });
-  };
 
   return (
     <Box
@@ -124,7 +166,7 @@ const Alerts = () => {
             </Typography>
 
             {alerts.length === 0 ? (
-              <Typography>No alerts to show.</Typography>
+              <Typography>No unknown face alerts to show.</Typography>
             ) : (
               alerts.map((alert) => (
                 <Box
@@ -138,19 +180,21 @@ const Alerts = () => {
                     borderRadius: 2,
                   }}
                 >
+                  {/* Image rendering */}
                   <img
-                    src={alert.imageUrl}
-                    alt="Alert"
-                    style={{
-                      width: 100,
-                      height: 100,
-                      objectFit: "cover",
-                      borderRadius: "50%",
-                      marginRight: 20,
-                    }}
-                  />
+    src={alert.image} // Use 'alert.image' instead of 'alert.imageUrl'
+    alt={alert.name}
+    onClick={() => handleImageClick(alert.original_image64)}
+    style={{
+        width: 100,
+        height: 100,
+        objectFit: "cover",
+        borderRadius: "50%",
+        marginRight: 20,
+    }}
+/>
                   <Typography variant="body1" sx={{ color: "#fff", fontWeight: "bold", flexGrow: 1 }}>
-                    Unknown person detected
+                    {alert.name} detected
                   </Typography>
                   <Button
                     variant="contained"
@@ -163,7 +207,7 @@ const Alerts = () => {
                   <Button
                     variant="contained"
                     color="secondary"
-                    onClick={() => handleRemoveAlert(alert.id)}
+                    onClick={() => handleRemoveAlert(alert)}
                   >
                     Remove
                   </Button>
@@ -172,9 +216,38 @@ const Alerts = () => {
             )}
           </Paper>
         </Container>
+        {/* Dialog to show enlarged image */}
+<Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+  <DialogTitle>
+    Face Snapshot
+    <IconButton
+      aria-label="close"
+      onClick={handleCloseDialog}
+      sx={{
+        position: "absolute",
+        right: 8,
+        top: 8,
+        color: (theme) => theme.palette.grey[500],
+      }}
+    >
+      <CloseIcon />
+    </IconButton>
+  </DialogTitle>
+  <DialogContent>
+    {selectedImage && (
+      <img
+        src={selectedImage}
+        alt="Enlarged Face"
+        style={{ width: "100%", height: "auto", borderRadius: "12px" }}
+      />
+    )}
+  </DialogContent>
+</Dialog>
+
       </Box>
     </Box>
   );
 };
 
 export default Alerts;
+

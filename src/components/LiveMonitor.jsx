@@ -12,12 +12,13 @@ import {
   List,
   ListItem,
   ListItemText,
-  Button
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 
 const LiveMonitor = () => {
   const videoRef = useRef(null);
+  const unknownFaceMapRef = useRef(new Map());
+  const [unknownFaces, setUnknownFaces] = useState([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [frameCount, setFrameCount] = useState(1);
   const [intervalId, setIntervalId] = useState(null);
@@ -29,23 +30,16 @@ const LiveMonitor = () => {
   };
 
   const startCamera = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    videoRef.current.srcObject = stream;
-    setIsStreaming(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      videoRef.current.srcObject = stream;
+      setIsStreaming(true);
+    } catch (err) {
+      console.error("Camera access denied:", err);
+    }
   };
 
-  useEffect(() => {
-    if (isStreaming) {
-      const id = setInterval(() => {
-        captureAndSend();
-      }, 1000);
-      setIntervalId(id);
-    }
 
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [isStreaming]);
 
   const captureAndSend = async () => {
     const canvas = document.createElement("canvas");
@@ -55,22 +49,59 @@ const LiveMonitor = () => {
     ctx.drawImage(videoRef.current, 0, 0);
 
     canvas.toBlob(async (blob) => {
+      if (!blob) return;
+
       const formData = new FormData();
       formData.append("user_id", username);
       formData.append("file", blob, "frame.jpg");
 
       try {
-        const res = await axios.post("https://0239-35-204-227-158.ngrok-free.app/test-frame", formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+        const res = await axios.post("https://6a0b-35-221-246-145.ngrok-free.app/test-frame", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
         });
-        console.log(`sent frame ${frameCount}`);
-        setFrameCount(prev => prev + 1);
 
-        const timestamp = new Date().toLocaleString();
-        res.data.results.forEach((result) => {
-          console.log(`[${timestamp}] name: ${result.name}`);
+        console.log(`sent frame ${frameCount}`);
+        setFrameCount((prev) => prev + 1);
+
+        const currentTime = Date.now();
+        const results = res.data.results;
+
+        const croppedFaces = res.data.cropped_faces || {};
+        const original_imageb64 = res.data.image_base64;
+        console.log(original_imageb64);
+        res.data.results.forEach(resEntry => {
+          const { name, bbox } = resEntry;
+          console.log(name);
+          if (name.startsWith("Unknown") && original_imageb64) {
+            const now = Date.now();
+            const lastSavedTime = unknownFaceMapRef.current.get(name) || 0;
+
+            if (now - lastSavedTime >= 10 * 60 * 1000) {
+              const imageBase64 = croppedFaces[name];
+
+              if (!imageBase64) {
+                console.warn("No cropped face for", name);
+                return;
+              }
+
+              const newEntry = {
+                name,
+                bbox,
+                image: `data:image/jpeg;base64,${imageBase64}`,
+                original_image: `data:image/jpeg;base64,${original_imageb64}`,
+                timestamp: now,
+              };
+
+              // Safely update state and ref
+              setUnknownFaces(prev => {
+                const updated = [...prev, newEntry];
+                localStorage.setItem("unknownFaces", JSON.stringify(updated));
+                return updated;
+              });
+
+              unknownFaceMapRef.current.set(name, now);
+            }
+          }
         });
 
       } catch (error) {
@@ -79,9 +110,29 @@ const LiveMonitor = () => {
     }, "image/jpeg");
   };
 
+  useEffect(() => {
+    if (isStreaming) {
+      const id = setInterval(captureAndSend, 1000);
+      setIntervalId(id);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isStreaming]);
+
+  useEffect(() => {
+    const savedFaces = JSON.parse(localStorage.getItem("unknownFaces"));
+    if (savedFaces && Array.isArray(savedFaces)) {
+      setUnknownFaces(savedFaces);
+      const map = new Map();
+      savedFaces.forEach(f => map.set(f.name, f.timestamp));
+      unknownFaceMapRef.current = map;
+    }
+  }, []);
+
   return (
     <Box sx={{ display: "flex", flexDirection: "row", minHeight: "100vh", background: "linear-gradient(to right, rgba(15,23,42,0.9), rgba(30,58,138,0.85))" }}>
-      {/* Sidebar */}
       <Drawer open={sidebarOpen} onClose={toggleSidebar} sx={{ width: 240, flexShrink: 0 }}>
         <Toolbar />
         <Box sx={{ textAlign: "center", p: 2, fontFamily: "monospace", fontWeight: "bold", fontSize: "1.5rem" }}>
@@ -89,7 +140,8 @@ const LiveMonitor = () => {
         </Box>
         <Box sx={{ overflow: "auto" }}>
           <List>
-            {[["Dashboard Overview", "/dashboard"],
+            {[
+              ["Dashboard Overview", "/dashboard"],
               ["Add Camera Details", "/add-cameras"],
               ["View Stored Details", "/view-details"],
               ["Add Authorized Members", "/add-authorized"],
@@ -97,7 +149,7 @@ const LiveMonitor = () => {
               ["History", "/history"],
               ["Alerts", "/alerts"],
               ["Live Camera Monitor", "/live-monitor"],
-              ["Logout", "/login"]
+              ["Logout", "/login"],
             ].map(([text, path]) => (
               <ListItem button component={Link} to={path} key={text}>
                 <ListItemText primary={text} />
@@ -107,7 +159,6 @@ const LiveMonitor = () => {
         </Box>
       </Drawer>
 
-      {/* Main Content */}
       <Box sx={{ flexGrow: 1, p: 3 }}>
         <AppBar position="static" sx={{ backgroundColor: "rgba(255,255,255,0.05)", backdropFilter: "blur(10px)" }}>
           <Toolbar>
@@ -139,7 +190,7 @@ const LiveMonitor = () => {
             width: "100%",
             textAlign: "center",
             margin: "auto",
-            marginTop: "2rem"
+            marginTop: "2rem",
           }}
         >
           <h2 style={{ fontSize: "2rem", fontWeight: "bold", marginBottom: "1.5rem", color: "#fff" }}>
@@ -174,8 +225,8 @@ const LiveMonitor = () => {
               boxShadow: "0 4px 15px rgba(22,163,74,0.4)",
               transition: "background-color 0.3s ease",
             }}
-            onMouseEnter={e => e.target.style.backgroundColor = "#15803d"}
-            onMouseLeave={e => e.target.style.backgroundColor = "#16a34a"}
+            onMouseEnter={(e) => (e.target.style.backgroundColor = "#15803d")}
+            onMouseLeave={(e) => (e.target.style.backgroundColor = "#16a34a")}
           >
             Start Camera & Stream Frames
           </button>
