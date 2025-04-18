@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { TextField } from "@mui/material";
+
 import {
   Box,
   Drawer,
@@ -70,6 +72,13 @@ const Alerts = () => {
   };
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [authorizeDialogOpen, setAuthorizeDialogOpen] = useState(false);
+  const [authorizeImage, setAuthorizeImage] = useState(null);
+  const [authorizeName, setAuthorizeName] = useState("");
+  const [selectedAlert, setSelectedAlert] = useState(null);
+
+  const [selectedAlertId, setSelectedAlertId] = useState(null);
+
 
   const handleImageClick = (image) => {
     setSelectedImage(image);
@@ -81,10 +90,89 @@ const Alerts = () => {
     setSelectedImage(null);
   };
 
-  const handleAuthorize = (id) => {
-    console.log(`Authorizing alert ${id} for ${username}`);
-    navigate("/add-authorized", { state: { alertId: id } });
+  const handleAuthorize = (alert) => {
+    setAuthorizeImage(alert.image);
+    setAuthorizeName(alert.name); // optional: prefill
+    setSelectedAlertId(alert.id);
+    setSelectedAlert(alert);
+    setAuthorizeDialogOpen(true);
   };
+  const handleSubmitAuthorization = async () => {
+    try {
+      const formDataNgrok = new FormData();
+      formDataNgrok.append("user_id", username);
+      formDataNgrok.append("newLabel", authorizeName);
+      formDataNgrok.append("oldLabel", selectedAlert.name);
+
+      try {
+        // Step 2: Send to ngrok server first
+        const ngrokResponse = await fetch("https://fdcb-104-197-172-157.ngrok-free.app/update", {
+          method: "POST",
+          body: formDataNgrok,
+        });
+
+        if (ngrokResponse.ok) {
+          const formData = new FormData();
+          formData.append("name", authorizeName);
+          formData.append("username", username);
+          const blob = await (await fetch(authorizeImage)).blob();
+          const file = new File([blob], `${authorizeName}.jpg`, { type: blob.type });
+          formData.append("images", file);
+          try {
+            const response = await fetch("http://localhost:5000/api/faces", {
+              method: "POST",
+              body: formData,
+            });
+
+            if (response.ok) {
+              console.log("added alert face to db");
+              // Replace all "Unknown 11" with "Raju"
+              let history = JSON.parse(localStorage.getItem("faceHistory") || "{}");
+
+              for (let time in history) {
+                history[time] = history[time].map(name => name === selectedAlert.name ? authorizeName : name);
+              }
+
+              // Save the updated history back to localStorage
+
+              localStorage.setItem("faceHistory", JSON.stringify(history));
+              const updatedAlerts = alerts.filter((alert) => alert.id !== selectedAlertId);
+              setAlerts(updatedAlerts);
+
+              const stored = JSON.parse(localStorage.getItem("unknownFaces") || "[]");
+              const newStored = stored.filter((alert) => alert.name !== selectedAlertId);
+              localStorage.setItem("unknownFaces", JSON.stringify(newStored));
+
+              setAuthorizeDialogOpen(false);
+              setAuthorizeImage(null);
+              setAuthorizeName("");
+              setSelectedAlertId(null);
+
+
+            }
+
+            else {
+              await deleteFaceFromNgrok(username, authorizeName);
+
+            }
+          } catch (err) {
+            console.error(err);
+          }
+        } else {
+          const error = await ngrokResponse.json();
+          alert("Ngrok Error: " + error.message);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+
+      // Remove alert after successful authorization
+
+    } catch (err) {
+      console.error("Authorization failed:", err);
+    }
+  };
+
 
   const menuItems = [
     ["Dashboard Overview", "/dashboard"],
@@ -200,7 +288,7 @@ const Alerts = () => {
                     variant="contained"
                     color="primary"
                     sx={{ marginRight: 2 }}
-                    onClick={() => handleAuthorize(alert.id)}
+                    onClick={() => handleAuthorize(alert)}
                   >
                     Authorize Him
                   </Button>
@@ -241,6 +329,38 @@ const Alerts = () => {
                 style={{ width: "100%", height: "auto", borderRadius: "12px" }}
               />
             )}
+          </DialogContent>
+        </Dialog>
+        <Dialog open={authorizeDialogOpen} onClose={() => setAuthorizeDialogOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>
+            Authorize Person
+            <IconButton
+              aria-label="close"
+              onClick={() => setAuthorizeDialogOpen(false)}
+              sx={{ position: "absolute", right: 8, top: 8 }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent sx={{ textAlign: "center" }}>
+            {authorizeImage && (
+              <img
+                src={authorizeImage}
+                alt="Authorize"
+                style={{ width: 200, height: 200, borderRadius: "10px", marginBottom: 20 }}
+              />
+            )}
+            <TextField
+              fullWidth
+              label="Enter Name"
+              variant="outlined"
+              value={authorizeName}
+              onChange={(e) => setAuthorizeName(e.target.value)}
+              sx={{ marginBottom: 3 }}
+            />
+            <Button variant="contained" color="primary" onClick={handleSubmitAuthorization}>
+              Submit
+            </Button>
           </DialogContent>
         </Dialog>
 

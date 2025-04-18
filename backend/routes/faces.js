@@ -38,14 +38,14 @@ router.post("/", upload.array("images", 4), async (req, res) => {
     }
 
     // Prevent duplicate (same name + username)
-    const existing = await conn.db.collection("faces.files").findOne({
-      "metadata.name": name,
-      "metadata.username": username,
-    });
+    // const existing = await conn.db.collection("faces.files").findOne({
+    //   "metadata.name": name,
+    //   "metadata.username": username,
+    // });
 
-    if (existing) {
-      return res.status(409).json({ error: `Face with name "${name}" already exists for this user.` });
-    }
+    // if (existing) {
+    //   return res.status(409).json({ error: `Face with name "${name}" already exists for this user.` });
+    // }
 
     // Upload each image into GridFS
     const uploadedIds = [];

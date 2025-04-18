@@ -23,10 +23,11 @@ import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import { useUsername } from "../context/UsernameContext";
 
+
 const AddAuthorizedMember = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { prefillImage } = location.state || {};
+  const { prefillImage, prefillName } = location.state || {};
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { username } = useUsername();
@@ -34,19 +35,29 @@ const AddAuthorizedMember = () => {
   const [name, setName] = useState("");
   const [imageFiles, setImageFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
-
+  const base64ToFile = async (base64, filename = "unknown.jpg") => {
+    const res = await fetch(base64);
+    const blob = await res.blob();
+    return new File([blob], filename, { type: blob.type });
+  };
+  
   useEffect(() => {
-    if (prefillImage) {
-      // Convert base64 string to a Blob and File
-      fetch(prefillImage)
-        .then(res => res.blob())
-        .then(blob => {
-          const file = new File([blob], "unknown_face.jpg", { type: blob.type });
-          setImageFiles([file]);
-          setPreviews([URL.createObjectURL(file)]);
-        });
-    }
-  }, [prefillImage]);
+    const loadPrefilledData = async () => {
+      if (prefillImage) {
+        const file = await base64ToFile(prefillImage);
+        setImageFiles([file]);
+        setPreviews([URL.createObjectURL(file)]);
+      }
+  
+      if (prefillName) {
+        setName(prefillName);
+      }
+    };
+  
+    loadPrefilledData();
+  }, [prefillImage, prefillName]);
+  
+  
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -102,7 +113,7 @@ const AddAuthorizedMember = () => {
 
       try {
         // Step 2: Send to ngrok server first
-        const ngrokResponse = await fetch("https://b04c-35-194-153-195.ngrok-free.app/add-face", {
+        const ngrokResponse = await fetch("https://fdcb-104-197-172-157.ngrok-free.app/add-face", {
           method: "POST",
           body: formDataNgrok,
         });
@@ -129,10 +140,10 @@ const AddAuthorizedMember = () => {
               navigate("/authorized-members");
             } else {
               await deleteFaceFromNgrok(username, name);
-              if (res.status === 409) {
-                const error = await res.json();
-                console.log(error.error);
-              }
+              // if (res.status === 409) {
+              //   const error = await res.json();
+              //   console.log(error.error);
+              // }
             }
           } catch (err) {
             console.error(err);

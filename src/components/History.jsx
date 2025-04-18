@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Drawer,
@@ -11,12 +11,15 @@ import {
   ListItemText,
   Container,
   Paper,
+  Button,
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 
 const History = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [groupedHistory, setGroupedHistory] = useState({});
+
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   const menuItems = [
@@ -28,8 +31,28 @@ const History = () => {
     ["History", "/history"],
     ["Alerts", "/alerts"],
     ["Live Camera Monitor", "/live-monitor"],
-    ["Logout", "/login"]
+    ["Logout", "/login"],
   ];
+
+  useEffect(() => {
+    const historyData = JSON.parse(localStorage.getItem("faceHistory")) || {};
+    setGroupedHistory(historyData);
+  }, []);
+
+  const exportToCSV = () => {
+    const historyData = JSON.parse(localStorage.getItem("faceHistory")) || {};
+    let csv = "Time Bucket,Recognized Names\n";
+    Object.entries(historyData).forEach(([bucket, names]) => {
+      csv += `${bucket},"${names.join(", ")}"\n`;
+    });
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "face_history.csv");
+    link.click();
+  };
 
   return (
     <Box
@@ -41,11 +64,7 @@ const History = () => {
       }}
     >
       {/* Sidebar */}
-      <Drawer
-        open={sidebarOpen}
-        onClose={toggleSidebar}
-        sx={{ width: 240, flexShrink: 0 }}
-      >
+      <Drawer open={sidebarOpen} onClose={toggleSidebar} sx={{ width: 240, flexShrink: 0 }}>
         <Toolbar />
         <Box
           sx={{
@@ -79,12 +98,7 @@ const History = () => {
           }}
         >
           <Toolbar>
-            <IconButton
-              edge="start"
-              color="inherit"
-              onClick={toggleSidebar}
-              sx={{ mr: 2 }}
-            >
+            <IconButton edge="start" color="inherit" onClick={toggleSidebar} sx={{ mr: 2 }}>
               <MenuIcon />
             </IconButton>
             <Typography
@@ -114,14 +128,43 @@ const History = () => {
               boxShadow: "0 8px 30px rgba(0,0,0,0.3)",
             }}
           >
-            <Typography
-              variant="h5"
-              gutterBottom
-              sx={{ fontWeight: "bold", color: "#fff" }}
-            >
-              History 
-              </Typography>
-            {/* TODO: Add your history content here */}
+            <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold", color: "#fff" }}>
+              History
+            </Typography>
+
+            {Object.entries(groupedHistory).length === 0 ? (
+              <Typography>No face recognition history found.</Typography>
+            ) : (
+              Object.entries(groupedHistory).map(([bucket, names]) => (
+                <Box key={bucket} sx={{ mb: 2 }}>
+                  <Typography variant="h6" sx={{ color: "#90caf9", fontWeight: "bold" }}>
+                    {bucket}
+                  </Typography>
+                  <ul style={{ marginLeft: "1.5rem" }}>
+                    {names.map((name, idx) => (
+                      <li key={idx} style={{ fontSize: "1rem" }}>{name}</li>
+                    ))}
+                  </ul>
+                </Box>
+              ))
+            )}
+
+            <Box sx={{ mt: 4 }}>
+              <Button
+                variant="outlined"
+                onClick={exportToCSV}
+                sx={{
+                  borderColor: "#90caf9",
+                  color: "#90caf9",
+                  "&:hover": {
+                    borderColor: "#64b5f6",
+                    backgroundColor: "rgba(144,202,249,0.1)",
+                  },
+                }}
+              >
+                Export to CSV
+              </Button>
+            </Box>
           </Paper>
         </Container>
       </Box>

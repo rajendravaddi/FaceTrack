@@ -15,6 +15,13 @@ import {
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 
+const get10MinBucket = (timestamp) => {
+  const date = new Date(timestamp);
+  const minutes = Math.floor(date.getMinutes() / 10) * 10;
+  return `${date.getHours().toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+};
+
+
 const LiveMonitor = () => {
   const videoRef = useRef(null);
   const unknownFaceMapRef = useRef(new Map());
@@ -61,7 +68,7 @@ const LiveMonitor = () => {
       formData.append("file", blob, "frame.jpg");
 
       try {
-        const res = await axios.post("https://b04c-35-194-153-195.ngrok-free.app/test-frame", formData, {
+        const res = await axios.post("https://fdcb-104-197-172-157.ngrok-free.app/test-frame", formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
@@ -72,6 +79,33 @@ const LiveMonitor = () => {
 
         const currentTime = Date.now();
         const results = res.data.results;
+        const storedHistory = JSON.parse(localStorage.getItem("faceHistory")) || {};
+        const history = {};
+
+        // Convert back each bucket's array to a Set
+        for (const bucket in storedHistory) {
+          history[bucket] = new Set(storedHistory[bucket]);
+        }
+
+
+        results.forEach(resEntry => {
+          const { name } = resEntry;
+          const now = Date.now();
+          const bucket = get10MinBucket(now);
+
+          if (!history[bucket]) {
+            history[bucket] = new Set(); // Use Set to avoid duplicates
+          }
+          history[bucket].add(name); // add name to the Set (ensures no duplicates)
+        });
+
+        // Convert sets to arrays before saving
+        const cleanedHistory = {};
+        for (const bucket in history) {
+          cleanedHistory[bucket] = Array.from(history[bucket]);
+        }
+
+        localStorage.setItem("faceHistory", JSON.stringify(cleanedHistory));
 
         const croppedFaces = res.data.cropped_faces || {};
         const original_imageb64 = res.data.image_base64;
