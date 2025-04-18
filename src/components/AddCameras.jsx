@@ -1,4 +1,4 @@
-//currently there will exist a error if we add more than one camera for user ...i dont know why....
+
 import React, { useState } from "react";
 import {
   AppBar,

@@ -13,12 +13,11 @@ import Alerts from "./components/Alerts.jsx";
 import History from "./components/History.jsx";
 
 import { UsernameProvider } from "./context/UsernameContext"; // ✅ Username context
-import { IpAddressProvider } from "./context/IpAddressContext"; // ✅ IP address context
+
 
 const App = () => {
   return (
     <UsernameProvider>
-      <IpAddressProvider> {/* ✅ Wrap the entire app with IP address context */}
         <Router>
           <Routes>
             <Route path="/login" element={<Login />} />
@@ -34,7 +33,6 @@ const App = () => {
             <Route path="/history" element={<History />} />
           </Routes>
         </Router>
-      </IpAddressProvider>
     </UsernameProvider>
   );
 };
