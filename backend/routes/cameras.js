@@ -1,52 +1,69 @@
-// routes/cameras.js
 const express = require("express");
 const router = express.Router();
 const Camera = require("../models/Camera");
 
-// POST /api/cameras/add - Add or update the one allowed camera per user
-router.post("/add", async (req, res) => {
-  const { username, cameraName, ipAddresses, location } = req.body;
-
-  if (!username || !cameraName || !ipAddresses || !Array.isArray(ipAddresses)) {
-    return res.status(400).json({ message: "Missing required fields" });
-  }
-
+// Add or update a camera for a user
+router.post("/", async (req, res) => {
   try {
-    const updatedCamera = await Camera.findOneAndUpdate(
-      { username }, // only one camera per username
-      { $set: { cameraName, ipAddresses, location } },
-      { new: true, upsert: true }
-    );
+    const { cameraName, ipAddress, location, username } = req.body;
+    console.log("Received data:", { cameraName, ipAddress, location, username });
 
-    res.status(200).json({ message: "Camera added or updated successfully", data: updatedCamera });
+    if (!cameraName || !ipAddress || !username) {
+      return res.status(400).json({ error: "Camera name, IP address, and username are required" });
+    }
+
+    // Update if camera exists, otherwise insert
+    const existing = await Camera.findOne({ username });
+
+    if (existing) {
+      existing.cameraName = cameraName;
+      existing.ipAddress = ipAddress;
+      existing.location = location;
+      const updated = await existing.save();
+      return res.status(200).json(updated);
+    }
+
+    const newCamera = new Camera({ cameraName, ipAddress, location, username });
+    await newCamera.save();
+    res.status(201).json(newCamera);
   } catch (err) {
-    res.status(500).json({ message: "Error adding/updating camera", error: err.message });
+    console.error("Error saving camera:", err);
+    res.status(500).json({ error: err.message });
   }
 });
 
-// GET /api/cameras/:username - Get the single camera for a user
+// Get all cameras for a specific user
 router.get("/:username", async (req, res) => {
   const { username } = req.params;
 
-  try {
-    const camera = await Camera.findOne({ username });
-    if (!camera) {
-      return res.status(404).json({ message: "No camera found for this user" });
-    }
+  if (!username) {
+    return res.status(400).json({ error: "Username is required" });
+  }
 
-    res.status(200).json(camera);
+  try {
+    const cameras = await Camera.find({ username });
+    res.json(cameras);
   } catch (err) {
-    res.status(500).json({ message: "Error fetching camera", error: err.message });
+    console.error("Error fetching cameras:", err);
+    res.status(500).json({ error: err.message });
   }
 });
 
-// DELETE /api/cameras/:id - Delete the user's single camera by ID
-router.delete("/:id", async (req, res) => {
+// Delete a camera by ID and username
+router.delete("/:id/:username", async (req, res) => {
+  const { id, username } = req.params;
+
   try {
-    await Camera.findByIdAndDelete(req.params.id);
-    res.status(200).json({ message: "Camera deleted successfully" });
-  } catch (err) {
-    res.status(500).json({ message: "Error deleting camera", error: err.message });
+    const camera = await Camera.findOneAndDelete({ _id: id, username });
+
+    if (!camera) {
+      return res.status(404).json({ message: "Camera not found or unauthorized" });
+    }
+
+    res.json({ message: "Camera deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting camera:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

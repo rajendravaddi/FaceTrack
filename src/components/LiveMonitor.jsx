@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Link } from "react-router-dom";
 import axios from 'axios';
 import { useUsername } from "../context/UsernameContext";
+import { useIpAddress } from "../context/IpAddressContext";
 import {
   AppBar,
   Toolbar,
@@ -24,6 +25,11 @@ const LiveMonitor = () => {
   const [intervalId, setIntervalId] = useState(null);
   const { username } = useUsername();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { ipAddress, setIpAddress } = useIpAddress();
+
+  console.log("Global IP Address from Context:", ipAddress);
+
+
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);

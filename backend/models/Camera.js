@@ -1,11 +1,11 @@
-// models/Camera.js
 const mongoose = require("mongoose");
 
-const cameraSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true }, // One camera per user
+const CameraSchema = new mongoose.Schema({
   cameraName: { type: String, required: true },
-  ipAddresses: [{ type: String }],
-  location: { type: String }
+  ipAddress: { type: String, required: true },
+  location: { type: String },
+  username: { type: String, required: true },
 });
 
-module.exports = mongoose.model("Camera", cameraSchema);
+module.exports = mongoose.model("Camera", CameraSchema);
+
