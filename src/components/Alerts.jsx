@@ -106,7 +106,7 @@ const Alerts = () => {
 
       try {
         // Step 2: Send to ngrok server first
-        const ngrokResponse = await fetch("https://c7a5-34-80-210-207.ngrok-free.app/update", {
+        const ngrokResponse = await fetch("https://bb8f-34-121-239-240.ngrok-free.app/update", {
           method: "POST",
           body: formDataNgrok,
         });

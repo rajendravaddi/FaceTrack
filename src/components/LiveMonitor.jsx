@@ -101,7 +101,7 @@ const LiveMonitor = () => {
       formData.append("file", blob, "frame.jpg");
 
       try {
-        const res = await axios.post("https://c7a5-34-80-210-207.ngrok-free.app/test-frame", formData, {
+        const res = await axios.post("https://bb8f-34-121-239-240.ngrok-free.app/test-frame", formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
