@@ -60,20 +60,20 @@ const LiveMonitor = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      videoRef.current.srcObject = stream;
+  const startCamera = () => {
+    const ipWebcamURL = "/video/shot.jpg";
+    if (videoRef.current) {
+      videoRef.current.src = `${ipWebcamURL}?t=${Date.now()}`;
       setIsStreaming(true);
-    } catch (err) {
-      console.error("Camera access denied:", err);
     }
   };
+  
+  
   const stopCamera = () => {
     const stream = videoRef.current?.srcObject;
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
-      videoRef.current.srcObject = null;
+      videoRef.current.src = null;
     }
     setIsStreaming(false);
     if (intervalId) clearInterval(intervalId);
@@ -88,30 +88,34 @@ const LiveMonitor = () => {
 
   const captureAndSend = async () => {
     const canvas = document.createElement("canvas");
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(videoRef.current, 0, 0);
+  canvas.width = videoRef.current.naturalWidth;
+  canvas.height = videoRef.current.naturalHeight;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(videoRef.current, 0, 0);
+    //
 
     canvas.toBlob(async (blob) => {
-      if (!blob) return;
+      if (!blob) {
+        console.log("blob conversion failed");
+        return;}
 
       const formData = new FormData();
       formData.append("user_id", username);
       formData.append("file", blob, "frame.jpg");
 
       try {
-        const res = await axios.post("https://bb8f-34-121-239-240.ngrok-free.app/test-frame", formData, {
+        const res = await axios.post("https://4013-34-86-217-50.ngrok-free.app/test-frame", formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
         });
 
-        console.log(`sent frame ${frameCount}`);
-        setFrameCount((prev) => prev + 1);
+        // console.log(`sent frame ${frameCount}`);
+        // setFrameCount((prev) => prev + 1);
 
         const currentTime = Date.now();
         const results = res.data.results;
+       // console.log(results);
         const storedHistory = JSON.parse(localStorage.getItem("faceHistory")) || {};
         const history = {};
 
@@ -127,7 +131,7 @@ const LiveMonitor = () => {
         results.forEach(resEntry => {
           const { name } = resEntry;
           const bucket = get10MinBucket(curentTime);
-
+          //console.log(name);
           if (!history[bucket]) {
             history[bucket] = new Set();
           }
@@ -154,10 +158,10 @@ const LiveMonitor = () => {
 
         const croppedFaces = res.data.cropped_faces || {};
         const original_imageb64 = res.data.image_base64;
-        console.log(original_imageb64);
+      //  console.log(`hello ${original_imageb64}`);
         res.data.results.forEach(resEntry => {
           const { name, bbox } = resEntry;
-          console.log(name);
+         // console.log(name);
           const allNames = res.data.results.map(resEntry => resEntry.name);
           setDetectedNames(allNames.length > 0 ? allNames : ["None"]);
           if (name.startsWith("Unknown") && original_imageb64) {
@@ -197,17 +201,30 @@ const LiveMonitor = () => {
       }
     }, "image/jpeg");
   };
+  let lastCapture = 0;
 
-  useEffect(() => {
-    if (isStreaming) {
-      const id = setInterval(captureAndSend, 1000);
-      setIntervalId(id);
+  // Handler for when the <img> loads a new frame
+  const handleImageLoad = () => {
+    const now = Date.now();
+    if (now - lastCapture >= 1000) {      // only once per 1000ms
+      captureAndSend();
+      lastCapture = now;
     }
-
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
+  };
+  useEffect(() => {
+    let id;
+    if (isStreaming) {
+      id = setInterval(() => {
+        if (videoRef.current) {
+          videoRef.current.src = `/video/shot.jpg?t=${Date.now()}`;
+        }
+      }, 111);                           // reload every 100ms
+    }
+    return () => clearInterval(id);
   }, [isStreaming]);
+
+  
+  
 
   useEffect(() => {
     const savedFaces = JSON.parse(localStorage.getItem("unknownFaces"));
@@ -304,19 +321,20 @@ const LiveMonitor = () => {
           <h2 style={{ fontSize: "2rem", fontWeight: "bold", marginBottom: "1.5rem", color: "#fff" }}>
             🎥 Live Camera Monitor
           </h2>
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            style={{
-              borderRadius: "12px",
-              border: "2px solid #334155",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
-              width: "100%",
-              maxWidth: "640px",
-              height: "auto",
-            }}
-          />
+          <img
+  ref={videoRef}
+  onLoad={handleImageLoad}
+  alt="Live Camera"
+  style={{
+    borderRadius: "12px",
+    border: "2px solid #334155",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+    width: "100%",
+    maxWidth: "640px",
+    height: "auto",
+  }}
+/>
+
           <br />
           <div style={{ marginTop: "1.5rem", display: "flex", justifyContent: "center", gap: "1rem" }}>
   <button
@@ -361,25 +379,6 @@ const LiveMonitor = () => {
 </div>
 
         </div>
-        <Drawer
-          anchor="right"
-          open={showDrawer}
-          onClose={() => setShowDrawer(false)}
-          PaperProps={{
-            sx: { width: 300, backgroundColor: "#1e293b", color: "#fff", padding: 2 },
-          }}
-        >
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold", textAlign: "center" }}>
-            Recognized Faces
-          </Typography>
-          <List>
-            {recognizedFaces.map((face, idx) => (
-              <ListItem key={idx} sx={{ backgroundColor: "#334155", mb: 1, borderRadius: "8px" }}>
-                <ListItemText primary={face} />
-              </ListItem>
-            ))}
-          </List>
-        </Drawer>
         {showDetectedFacesBox && (
           <Box
             sx={{
